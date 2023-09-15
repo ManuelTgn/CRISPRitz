@@ -150,10 +150,11 @@ def SNPsProcess(line):
         altstr = str(x[2])
         k = altstr.split(',')
         if (len(x[2]) == 3):
-            if (str(genomeList[int(x[0])])) not in k:
-                original = genomeList[int(x[0])]
-            else:
-                original = ''
+            original = (
+                genomeList[int(x[0])]
+                if (str(genomeList[int(x[0])])) not in k
+                else ''
+            )
             snp = k[0]+k[1]
             iupacvalue = str(original+snp)  #TODO if original is a single nucleotide, use iupac_code_scomposition[original]
             for key, value in iupac_code.items():
@@ -161,10 +162,11 @@ def SNPsProcess(line):
                     genomeList[int(x[0])] = str(key)
         elif (len(x[2]) == 5):
             if (len(k[0]) == 1) and (len(k[1]) == 1) and (len(k[2]) == 1):
-                if (str(genomeList[int(x[0])])) not in k:
-                    original = genomeList[int(x[0])]
-                else:
-                    original = ''
+                original = (
+                    genomeList[int(x[0])]
+                    if (str(genomeList[int(x[0])])) not in k
+                    else ''
+                )
                 original = genomeList[int(x[0])]
                 snp = k[0]+k[1]+k[2]
                 iupacvalue = str(original+snp)  #TODO if original is a single nucleotide, use iupac_code_scomposition[original]
@@ -184,60 +186,59 @@ def chromosomeSave():
     os.chdir("./SNPs_genome/")
     if not (os.path.isdir(dir_enr_name)):
         os.mkdir(dir_enr_name)
-    outFile = open(dir_enr_name + '/' + genomeHeader[1:(len(genomeHeader)-1)]+'.enriched'+'.fa', 'w')
+    outFile = open(
+        dir_enr_name + '/' + genomeHeader[1:-1] + '.enriched' + '.fa', 'w'
+    )
     outFile.write(genomeHeader+genomeStr+'\n')
 
 def add_to_dict_snps(line):
     
-    list_samples = []
     list_chars = []
-    if len(line[2]) == 1 and len(line[3]) == 1:
-        for pos, i in enumerate(line[5:]):          #if sample has 1|1 0|1 or 1|0, #NOTE may change for different vcf
-            if ('1' in i):
-                list_samples.append(VCFheader[ pos + 5])
-        
-        chr_pos_string = currentChr + ',' + line[0] #chr,position
-        #Add in last two position the ref and alt nucleotide, eg: chrX,100 -> sample1,sample5,sample10;A,T;rsID100;0.01
-        #If no sample was found, the dict is chrX,100 -> ;A,T;rsID100;0.01
-        rsID = line[1]
-        list_chars.append(line[2])
-        list_chars.append(line[3])
-        af = line[4]  
-        if len(list_samples) > 0:
-            chr_dict_snps[chr_pos_string] = ','.join(sorted(list_samples)) + ';' + ','.join(list_chars) + ";" + rsID + ";" + af
-        else:
-            chr_dict_snps[chr_pos_string] = ';' + ','.join(list_chars) + ";" + rsID + ";" + af #None
-    elif len(line[2]) == 1:
-        variants = line[3].split(",")
-        snps = []
-        values_for_allele_info = []
-        for value, var in enumerate(variants):
-            if len(var) == 1: 
-                snps.append(var)
-                values_for_allele_info.append(value+1) #save number corresponding to snp (1,2,3...)
-        dict_of_lists_samples = {}
-        for snp in snps:
-            dict_of_lists_samples[snp] = []
-        if len(snps) > 0:		
-            for pos, sample in enumerate(line[5:]):
-                for idx, value in enumerate(values_for_allele_info):
-                    if str(value) in sample:
-                        dict_of_lists_samples[snps[idx]].append(VCFheader[ pos + 5]) #add to correct entry of dict the sample with such snp
-                        break
-                    
-            chr_pos_string = currentChr + ',' + line[0]
+    if len(line[2]) == 1:
+        if len(line[3]) == 1:
+            list_samples = [
+                VCFheader[pos + 5]
+                for pos, i in enumerate(line[5:])
+                if ('1' in i)
+            ]
+            chr_pos_string = currentChr + ',' + line[0] #chr,position
+            #Add in last two position the ref and alt nucleotide, eg: chrX,100 -> sample1,sample5,sample10;A,T;rsID100;0.01
+            #If no sample was found, the dict is chrX,100 -> ;A,T;rsID100;0.01
             rsID = line[1]
+            list_chars.extend((line[2], line[3]))
             af = line[4]
+            if list_samples:
+                chr_dict_snps[chr_pos_string] = ','.join(sorted(list_samples)) + ';' + ','.join(list_chars) + ";" + rsID + ";" + af
+            else:
+                chr_dict_snps[chr_pos_string] = ';' + ','.join(list_chars) + ";" + rsID + ";" + af #None
+        else:
+            variants = line[3].split(",")
+            snps = []
+            values_for_allele_info = []
+            for value, var in enumerate(variants):
+                if len(var) == 1: 
+                    snps.append(var)
+                    values_for_allele_info.append(value+1) #save number corresponding to snp (1,2,3...)
+            dict_of_lists_samples = {snp: [] for snp in snps}
+            if snps:		
+                for pos, sample in enumerate(line[5:]):
+                    for idx, value in enumerate(values_for_allele_info):
+                        if str(value) in sample:
+                            dict_of_lists_samples[snps[idx]].append(VCFheader[ pos + 5]) #add to correct entry of dict the sample with such snp
+                            break
 
-            final_entry = []
-            for snp in snps:
-                list_chars = [line[2]]
-                list_chars.append(snp)
-                if len(dict_of_lists_samples[snp]) > 0:
-                    final_entry.append(','.join(sorted(dict_of_lists_samples[snp])) + ';' + ','.join(list_chars) + ";" + rsID + ";" + af)
-                else:
-                    final_entry.append(';' + ','.join(list_chars) + ";" + rsID + ";" + af)
-            chr_dict_snps[chr_pos_string] = '/'.join(final_entry)
+                chr_pos_string = currentChr + ',' + line[0]
+                rsID = line[1]
+                af = line[4]
+
+                final_entry = []
+                for snp in snps:
+                    list_chars = [line[2], snp]
+                    if len(dict_of_lists_samples[snp]) > 0:
+                        final_entry.append(','.join(sorted(dict_of_lists_samples[snp])) + ';' + ','.join(list_chars) + ";" + rsID + ";" + af)
+                    else:
+                        final_entry.append(';' + ','.join(list_chars) + ";" + rsID + ";" + af)
+                chr_dict_snps[chr_pos_string] = '/'.join(final_entry)
 
 
 def dictSave():
@@ -255,19 +256,21 @@ def indel_to_fasta(line, id_indel):
                 if len(s) != line[2]:
                     line[3] = s
                     break
-        for pos, i in enumerate(line[5:]):          #if sample has 1|1 0|1 or 1|0, #NOTE may change for different vcf
-            if ('1' in i):
-                list_samples.append(VCFheader[ pos + 5])
+        list_samples.extend(
+            VCFheader[pos + 5] for pos, i in enumerate(line[5:]) if ('1' in i)
+        )
         start_position = int(line[0])-26
         end_position = int(line[0])+26+len(line[2])
         sub_fasta = genomeList[start_position:end_position]
         #sub_fasta[25] = line[3] 
         sub_fasta = ''.join(sub_fasta)
-        sub_fasta = sub_fasta[0:25] + re.sub(line[2], line[3], sub_fasta[25:], 1, flags=re.IGNORECASE) 
+        sub_fasta = sub_fasta[:25] + re.sub(
+            line[2], line[3], sub_fasta[25:], 1, flags=re.IGNORECASE
+        )
         with open(f'{output_dir_indels}/{currentChr}_{start_position}-{end_position}_{id_indel}.fa', 'w+') as fasta_out:
             fasta_out.write(f'>{currentChr}_{start_position}-{end_position}_{id_indel}\n')
             fasta_out.write(sub_fasta+'\n')
-                    
+
         rsID = line[1]
         af = line[4]
         indel = f"{currentChr}_{line[0]}_{line[2]}_{line[3]}"
@@ -286,7 +289,7 @@ def logIndelsSave():
 print('START ENRICHMENT WITH SNVs AND SVs')
 
 if sys.argv[4] == 'yes':
-    chr_dict_snps = dict()
+    chr_dict_snps = {}
     log_indels = []
     id_indel = 1
     if not os.path.isdir(f"fake_{vcfName}_{currentChr}"):
@@ -299,7 +302,7 @@ for line in inAltFile:
         add_to_dict_snps(line)
         id_indel = indel_to_fasta(line, id_indel)
     SNPsProcess(line)
-    
+
 
 #saving chr after enrichment with snps
 chromosomeSave()

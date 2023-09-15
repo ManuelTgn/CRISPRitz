@@ -5,6 +5,7 @@ From a clustered file, extract the first x Top1.
 This version of the script is DIFFERENT to the CRISPRme version (add #!/usr/bin/env python to first line, print the max mm, DNA and RNA bulges to be used in summary by guide pos script )
 '''
 
+
 #Script extract only the top X from all clusters
 # argv1 is input file ordered in cluster
 # argv2 is job_id 
@@ -21,7 +22,7 @@ job_id = sys.argv[2]
 max_mm = 0
 max_dna = 0
 max_rna = 0
-with open(sys.argv[1]) as targets, open( job_id + '.top_' + str(top_x) + '.txt', 'w+') as result:
+with (open(sys.argv[1]) as targets, open(f'{job_id}.top_{top_x}.txt', 'w+') as result):
     line = targets.readline()
     if '#' in line:
         result.write(line)  #header
@@ -38,7 +39,7 @@ with open(sys.argv[1]) as targets, open( job_id + '.top_' + str(top_x) + '.txt',
         max_rna = int(line[header['Bulge Size']])
 
     result.write('\t'.join(line) + '\n')
-    top_x_inserted = top_x_inserted + 1
+    top_x_inserted += 1
     for line in targets:
         line = line.strip().split('\t')
         current_pos = line[header['Cluster Position']]

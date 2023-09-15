@@ -7,6 +7,7 @@ Add Min Max PAM Disruption columns
 This version of the script is DIFFERENT to the CRISPRme version (argv4 is output name)
 '''
 
+
 #Was called min_max.py
 #Calculates, for the semicommon file, the total column, the min max mismatches column, the pam disr column, pam creation (with 'n' value), var uniq (with 'n' value)
 #sys 1 is semicommon file
@@ -34,13 +35,7 @@ This version of the script is DIFFERENT to the CRISPRme version (argv4 is output
 #       NBG     -> segnalo C,T
 import sys
 import itertools
-#argv 1 is cluster file
-#argv 2 is pam file
-#argv 3 is type of genome: var or both
-#argv4 is output name
-fill_column = True
-if sys.argv[3] == 'var':
-    fill_column = False
+fill_column = sys.argv[3] != 'var'
 with open (sys.argv[2]) as pam:
     line = pam.read().strip()
     pam = line.split(' ')[0]
@@ -51,7 +46,7 @@ with open (sys.argv[2]) as pam:
     pam_end = len_pam * (-1)
     if len_pam < 0:
         pam = pam[: (len_pam * (-1))]
-        len_pam = len_pam * (-1)
+        len_pam *= -1
         pos_beg = len_pam
         pos_end = None
         pam_begin = 0
@@ -118,7 +113,7 @@ iupac_code_set = {
         }
 
 name_output = sys.argv[4] #sys.argv[1][:sys.argv[1].rfind('.')]
-with open (sys.argv[1]) as t, open(name_output + '.minmaxdisr.txt','w+') as result:
+with (open (sys.argv[1]) as t, open(f'{name_output}.minmaxdisr.txt', 'w+') as result):
     header = '#Bulge type\tcrRNA\tDNA\tChromosome\tPosition\tCluster Position\tDirection\tMismatches\tBulge Size\tTotal\tMin_mismatches\tMax_mismatches\tPam_disr'
     if fill_column:
         header += '\tPAM_gen\tVar_uniq'
@@ -131,7 +126,7 @@ with open (sys.argv[1]) as t, open(name_output + '.minmaxdisr.txt','w+') as resu
         line = line.strip().split('\t')
         max_mm = int(line[7])
         #for pos, char in enumerate(line[2]):
-        
+
         for char in line[2][pos_beg: pos_end]:      
             if char in iupac_code:      
                 found_iupac = True
@@ -139,35 +134,34 @@ with open (sys.argv[1]) as t, open(name_output + '.minmaxdisr.txt','w+') as resu
                 #     max_mm = max_mm + 1  
                 if char.isupper():
                     max_mm = max_mm + 1
-    
+
         #Pam disruption 
         pam_disr = []
         for pos, char in enumerate(line[2][pam_begin:pam_end]):
             if char in iupac_code:      
                 
-                diff_res = iupac_code_set[char] - iupac_code_set[pam[pos]]
-                if diff_res:
+                if diff_res := iupac_code_set[char] - iupac_code_set[pam[pos]]:
                     pam_disr.append(diff_res)
                     found_iupac_pam = True
                 else:
                     pam_disr.append(iupac_code_set[char])
-                
 
-                # if pam[pos] in iupac_code:      #both are IUPAC
-                #     for normal_pam_char in iupac_code[pam[pos]]:
-                #         for normal_target_char in iupac_code[char]:
-                #             if normal_pam_char != normal_target_char:
-                #                 corr_targ_disr = corr_targ_disr + normal_target_char + ','
-                #         if corr_targ_disr:    
-                #             pam_disr = pam_disr +  '(' + str(pos) + ',' + normal_pam_char + ') -> (' + corr_targ_disr[:-1] + ')' + ';'
-                #         corr_targ_disr = ''
-                # else: #confronto normale
-                #     for normal_target_char in iupac_code[char]:
-                #         if pam[pos] != normal_target_char:
-                #             corr_targ_disr = corr_targ_disr + pam[pos] + ','
-                #     if corr_targ_disr:
-                #        pam_disr = pam_disr +  '(' + str(pos) + ',' + pam[pos] + ') -> (' + corr_targ_disr[:-1] + ')' + ';' 
-                #     corr_targ_disr = ''
+
+                            # if pam[pos] in iupac_code:      #both are IUPAC
+                            #     for normal_pam_char in iupac_code[pam[pos]]:
+                            #         for normal_target_char in iupac_code[char]:
+                            #             if normal_pam_char != normal_target_char:
+                            #                 corr_targ_disr = corr_targ_disr + normal_target_char + ','
+                            #         if corr_targ_disr:    
+                            #             pam_disr = pam_disr +  '(' + str(pos) + ',' + normal_pam_char + ') -> (' + corr_targ_disr[:-1] + ')' + ';'
+                            #         corr_targ_disr = ''
+                            # else: #confronto normale
+                            #     for normal_target_char in iupac_code[char]:
+                            #         if pam[pos] != normal_target_char:
+                            #             corr_targ_disr = corr_targ_disr + pam[pos] + ','
+                            #     if corr_targ_disr:
+                            #        pam_disr = pam_disr +  '(' + str(pos) + ',' + pam[pos] + ') -> (' + corr_targ_disr[:-1] + ')' + ';' 
+                            #     corr_targ_disr = ''
             else:
                 pam_disr.append(char)
         #print (pam_disr)
@@ -177,10 +171,8 @@ with open (sys.argv[1]) as t, open(name_output + '.minmaxdisr.txt','w+') as resu
         else:
             line.append('-')
             line.append('-')
-        if (found_iupac_pam):
-            pam_disr_list = []
-            for p in itertools.product(*pam_disr):
-                pam_disr_list.append(''.join(p))
+        if found_iupac_pam:
+            pam_disr_list = [''.join(p) for p in itertools.product(*pam_disr)]
             line.append(','.join(pam_disr_list))
         else:
             line.append('n')

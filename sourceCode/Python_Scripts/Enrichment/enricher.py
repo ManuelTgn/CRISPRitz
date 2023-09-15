@@ -149,8 +149,7 @@ def SNPsProcess(line):
     line[1] = str(int(line[1])-1)  # taaac per corregere conta posizione da zero/uno
     altAlleles = line[4].strip().split(',') #list di tutti gli alleli alternative
     referenceNucleotide = genomeStr[int(line[1])] #nucleotide reference preso dalla stringa del fasta
-    iupac_value = set() #set che contiene nt reference + alt snps
-    iupac_value.add(referenceNucleotide)
+    iupac_value = {referenceNucleotide}
     for alt in altAlleles: #ciclo sugli alt nt
         if len(alt) > 1: #se lun di alt nt è > 1 skippo perchè non è snp
             continue
@@ -205,63 +204,59 @@ def chromosomeSave():
     os.chdir("./SNPs_genome/")
     if not (os.path.isdir(dir_enr_name)):
         os.mkdir(dir_enr_name)
-    outFile = open(dir_enr_name + '/' + genomeHeader[1:(len(genomeHeader)-1)]+'.enriched'+'.fa', 'w')
-    outFile.write(genomeHeader+genomeStr+'\n')
-    outFile.close()
+    with open(dir_enr_name + '/' + genomeHeader[1:-1] + '.enriched' + '.fa', 'w') as outFile:
+        outFile.write(genomeHeader+genomeStr+'\n')
 
 def add_to_dict_snps(line, pos_AF):
-    list_samples = []
     list_chars = []
-    if len(line[3]) == 1 and len(line[4]) == 1:
-        for pos, i in enumerate(line[9:]):          #if sample has 1|1 0|1 or 1|0, #NOTE may change for different vcf
-            if ('1' in i.split(':')[0]):
-                list_samples.append(VCFheader[ pos + 9]+':'+i.split(':')[0])
-        
-        # print(list_samples)
-        
-        chr_pos_string = currentChr + ',' + line[1] #chr,position
-        #Add in last two position the ref and alt nucleotide, eg: chrX,100 -> sample1,sample5,sample10;A,T;rsID100;0.01
-        #If no sample was found, the dict is chrX,100 -> ;A,T;rsID100;0.01
-        rsID = line[2]
-        list_chars.append(line[3])
-        list_chars.append(line[4])
-        af = line[7].split(";")[pos_AF][3:] 
-        if len(list_samples) > 0:
-            chr_dict_snps[chr_pos_string] = ','.join(sorted(list_samples)) + ';' + ','.join(list_chars) + ";" + rsID + ";" + af
-        else:
-            chr_dict_snps[chr_pos_string] = ';' + ','.join(list_chars) + ";" + rsID + ";" + af #None
-        # print(chr_dict_snps[chr_pos_string])
-    elif len(line[3]) == 1:
-        variants = line[4].split(",")
-        snps = []
-        values_for_allele_info = []
-        for value, var in enumerate(variants):
-            if len(var) == 1: 
-                snps.append(var)
-                values_for_allele_info.append(value+1) #save number corresponding to snp (1,2,3...)
-        dict_of_lists_samples = {}
-        for snp in snps:
-            dict_of_lists_samples[snp] = []
-        if len(snps) > 0:		
-            for pos, sample in enumerate(line[9:]):
-                for idx, value in enumerate(values_for_allele_info):
-                    if str(value) in sample.split(':')[0]:
-                        dict_of_lists_samples[snps[idx]].append(VCFheader[ pos + 9]+':'+sample.split(':')[0]) #add to correct entry of dict the sample with such snp
-                        break
-                    
-            chr_pos_string = currentChr + ',' + line[1]
-            rsID = line[2].split(',')
-            af = line[7].split(";")[pos_AF][3:].split(',')
+    if len(line[3]) == 1:
+        if len(line[4]) == 1:
+            list_samples = [
+                VCFheader[pos + 9] + ':' + i.split(':')[0]
+                for pos, i in enumerate(line[9:])
+                if ('1' in i.split(':')[0])
+            ]
+            # print(list_samples)
 
-            final_entry = []
-            for idx, snp in enumerate(snps):
-                list_chars = [line[3]]
-                list_chars.append(snp)
-                if len(dict_of_lists_samples[snp]) > 0:
-                    final_entry.append(','.join(sorted(dict_of_lists_samples[snp])) + ';' + ','.join(list_chars) + ";" + rsID[0] + ";" + af[values_for_allele_info[idx]-1])
-                else:
-                    final_entry.append(';' + ','.join(list_chars) + ";" + rsID[0] + ";" + af[values_for_allele_info[idx]-1])
-            chr_dict_snps[chr_pos_string] = '$'.join(final_entry)
+            chr_pos_string = currentChr + ',' + line[1] #chr,position
+            #Add in last two position the ref and alt nucleotide, eg: chrX,100 -> sample1,sample5,sample10;A,T;rsID100;0.01
+            #If no sample was found, the dict is chrX,100 -> ;A,T;rsID100;0.01
+            rsID = line[2]
+            list_chars.extend((line[3], line[4]))
+            af = line[7].split(";")[pos_AF][3:]
+            if list_samples:
+                chr_dict_snps[chr_pos_string] = ','.join(sorted(list_samples)) + ';' + ','.join(list_chars) + ";" + rsID + ";" + af
+            else:
+                chr_dict_snps[chr_pos_string] = ';' + ','.join(list_chars) + ";" + rsID + ";" + af #None
+                # print(chr_dict_snps[chr_pos_string])
+        else:
+            variants = line[4].split(",")
+            snps = []
+            values_for_allele_info = []
+            for value, var in enumerate(variants):
+                if len(var) == 1: 
+                    snps.append(var)
+                    values_for_allele_info.append(value+1) #save number corresponding to snp (1,2,3...)
+            dict_of_lists_samples = {snp: [] for snp in snps}
+            if snps:		
+                for pos, sample in enumerate(line[9:]):
+                    for idx, value in enumerate(values_for_allele_info):
+                        if str(value) in sample.split(':')[0]:
+                            dict_of_lists_samples[snps[idx]].append(VCFheader[ pos + 9]+':'+sample.split(':')[0]) #add to correct entry of dict the sample with such snp
+                            break
+
+                chr_pos_string = currentChr + ',' + line[1]
+                rsID = line[2].split(',')
+                af = line[7].split(";")[pos_AF][3:].split(',')
+
+                final_entry = []
+                for idx, snp in enumerate(snps):
+                    list_chars = [line[3], snp]
+                    if len(dict_of_lists_samples[snp]) > 0:
+                        final_entry.append(','.join(sorted(dict_of_lists_samples[snp])) + ';' + ','.join(list_chars) + ";" + rsID[0] + ";" + af[values_for_allele_info[idx]-1])
+                    else:
+                        final_entry.append(';' + ','.join(list_chars) + ";" + rsID[0] + ";" + af[values_for_allele_info[idx]-1])
+                chr_dict_snps[chr_pos_string] = '$'.join(final_entry)
 
 def dictSave():
     #os.chdir("./SNPs_genome/")
@@ -284,42 +279,40 @@ def indel_to_fasta(line, id_indel, pos_AF, start_fake_pos):
             indels.append(line[4])
             values_for_allele_info.append(1)
         #print(search_sample_value, line[3], line[4])
-        if len(indels) > 0:
+        if indels:
 
-            dict_of_lists_samples = {}
-            for indel in indels:
-                dict_of_lists_samples[indel] = []
-
+            dict_of_lists_samples = {indel: [] for indel in indels}
             for pos, sample in enumerate(line[9:]):          #if sample has 1|1 0|1 or 1|0, #NOTE may change for different vcf
                 for idx, value in enumerate(values_for_allele_info):
                     if str(value) in sample.split(':')[0]:
                         dict_of_lists_samples[indels[idx]].append(VCFheader[ pos + 9]) #add to correct entry of dict the sample with such snp
                         break
-            if len(indels) > 0:
-                rsID = line[2].split(',')
-                af = line[7].split(";")[pos_AF][3:].split(',')
+            rsID = line[2].split(',')
+            af = line[7].split(";")[pos_AF][3:].split(',')
 
-                start_position = int(line[1])-26
-                end_position = int(line[1])+26+len(line[3])
-                sub_fasta = genomeStr[start_position:end_position]
-                for idx, indel in enumerate(indels):
-                    if len(dict_of_lists_samples[indel]) > 0:
-                        indel_info = f"{currentChr}_{line[1]}_{line[3]}_{indel}"
-                        
+            start_position = int(line[1])-26
+            end_position = int(line[1])+26+len(line[3])
+            sub_fasta = genomeStr[start_position:end_position]
+            for idx, indel in enumerate(indels):
+                if len(dict_of_lists_samples[indel]) > 0:
+                    indel_info = f"{currentChr}_{line[1]}_{line[3]}_{indel}"
+
                         #sub_fasta[25] = line[3] 
                         #sub_fasta = ''.join(sub_fasta)
-                        sub_fasta = sub_fasta[0:25] + re.sub(line[3], indel, sub_fasta[25:], 1, flags=re.IGNORECASE) 
-                        
-                        #fasta_out.write(f'>{currentChr}_{start_position}-{end_position}_{id_indel}\n')
-                        list_fasta_indels.append(sub_fasta+'\n'+"N\n")
-                        
-                        refseq = genomeStr[start_position:start_position+len(sub_fasta)]
-                        end_fake_pos = start_fake_pos + len(sub_fasta)#(end_position - start_position)
-                        
-                        log_indels.append([f"{currentChr}_{start_position}-{end_position}_{id_indel}", ",".join(dict_of_lists_samples[indel]), rsID[0], af[values_for_allele_info[idx]-1], indel_info, f"{start_fake_pos},{end_fake_pos}", refseq])
-                    
-                        id_indel += 1
-                        start_fake_pos = end_fake_pos + 1 
+                    sub_fasta = sub_fasta[:25] + re.sub(
+                        line[3], indel, sub_fasta[25:], 1, flags=re.IGNORECASE
+                    ) 
+
+                    #fasta_out.write(f'>{currentChr}_{start_position}-{end_position}_{id_indel}\n')
+                    list_fasta_indels.append(sub_fasta+'\n'+"N\n")
+
+                    refseq = genomeStr[start_position:start_position+len(sub_fasta)]
+                    end_fake_pos = start_fake_pos + len(sub_fasta)#(end_position - start_position)
+
+                    log_indels.append([f"{currentChr}_{start_position}-{end_position}_{id_indel}", ",".join(dict_of_lists_samples[indel]), rsID[0], af[values_for_allele_info[idx]-1], indel_info, f"{start_fake_pos},{end_fake_pos}", refseq])
+
+                    id_indel += 1
+                    start_fake_pos = end_fake_pos + 1 
 
     return id_indel, start_fake_pos
 
@@ -335,7 +328,7 @@ def logIndelsSave():
 print('START ENRICHMENT WITH SNVs AND SVs')
 
 if sys.argv[4] == 'yes':
-    chr_dict_snps = dict()
+    chr_dict_snps = {}
     log_indels = []
     id_indel = 1
     start_fake_pos = 0
@@ -357,7 +350,7 @@ for line in inAltFile:
         first_line = False
         splitted = line[7].split(";")
         for pos, ele in enumerate(splitted):
-            if ele[0:2] == "AF":
+            if ele[:2] == "AF":
                 pos_AF = pos
                 break
     if line[6] != 'PASS':
@@ -367,7 +360,7 @@ for line in inAltFile:
         add_to_dict_snps(line, pos_AF)
         id_indel, start_fake_pos = indel_to_fasta(line, id_indel, pos_AF, start_fake_pos)
     SNPsProcess(line)
-    
+
 
 #saving chr after enrichment with snps
 chromosomeSave()

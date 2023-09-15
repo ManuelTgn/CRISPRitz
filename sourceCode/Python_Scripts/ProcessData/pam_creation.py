@@ -5,6 +5,7 @@ Create the PAM Creation column
 This version of the script is DIFFERENT to the CRISPRme version (argv4 is output name, modified ext_seq_pam_creation call, modified bedfile name)
 '''
 
+
 # sys argv 1 is input file (uniq.sorted.txt)
 # sys argv 2 is pam NOTE tested only with NRG
 # sys argv 3 is reference genome dir
@@ -18,7 +19,7 @@ This version of the script is DIFFERENT to the CRISPRme version (argv4 is output
 
 import sys
 import subprocess
-import os 
+import os
 from os import listdir                      #for getting directories
 from os.path import isfile, isdir,join      #for getting directories
 import itertools
@@ -39,7 +40,7 @@ with open (sys.argv[2]) as pam:
     if len_pam < 0:
         guide_len = len(pam) + len_pam
         pam = pam[: (len_pam * (-1))]
-        len_pam = len_pam * (-1)
+        len_pam *= -1
         pos_beg = len_pam
         pos_end = None
         pam_begin = 0
@@ -109,9 +110,7 @@ iupac_code_set = {
           "g":{"g"},
           'N':{'A','T','G','C'}
         }
-rev_comp_pam = dict()
-for i in range(len_pam):
-    rev_comp_pam[i] = len_pam - i - 1
+rev_comp_pam = {i: len_pam - i - 1 for i in range(len_pam)}
 # rev_comp_pam = {
 #     0 : 2,
 #     1: 1,
@@ -119,17 +118,15 @@ for i in range(len_pam):
 # }
 
 def rev_comp(a):
-    if a == 'A' or a == 'a':
+    if a in ['A', 'a']:
         return 'T'
-    if a == 'T' or a == 't':
+    if a in ['T', 't']:
         return 'A'
-    if a == 'C' or a == 'c':
-        return 'G'
-    return 'C'
+    return 'G' if a in ['C', 'c'] else 'C'
 start_time = time.time()
 #Bedtools estrae da start(compreso) a end(non compreso)
 if not pam_at_beginning:
-    with open (sys.argv[1]) as uniq, open(name_output + '.bed', 'w+') as bedfile:
+    with (open (sys.argv[1]) as uniq, open(f'{name_output}.bed', 'w+') as bedfile):
         #header=uniq.readline()   #NOTE uncomment if file has header
         for line in uniq:
             if '#' in line:
@@ -151,7 +148,7 @@ if not pam_at_beginning:
                         # eg la prima C in CCGTGCATACTAGCTACGCACGT)
                         bedfile.write(line[3] + '\t' + str(int(line[4]) + rev_comp_pam[pos]) + '\t' + str(int(line[4]) + rev_comp_pam[pos] + 1) +'\n')
 else:
-    with open (sys.argv[1]) as uniq, open(name_output + '.bed', 'w+') as bedfile:
+    with (open (sys.argv[1]) as uniq, open(f'{name_output}.bed', 'w+') as bedfile):
         #header=uniq.readline()   #NOTE uncomment if file has header
         for line in uniq:
             if '#' in line:
@@ -174,17 +171,14 @@ else:
 
 print('Created bedfile:', time.time() - start_time)
 start_time = time.time()
-bed_file = os.path.realpath(name_output + '.bed')
-subprocess.call(['./ext_seq_pam_creation.sh ' + genome_dir + ' ' + bed_file], shell = True) 
+bed_file = os.path.realpath(f'{name_output}.bed')
+subprocess.call(
+    [f'./ext_seq_pam_creation.sh {genome_dir} {bed_file}'], shell=True
+)
 print('Bedtools DONE:', time.time() - start_time)
 onlyfile = [f for f in listdir('tmp_seq') if isfile(join('tmp_seq', f))]
 start_time = time.time()
-open_file = dict()
-
-for i in onlyfile:
-    open_file[i.split('.fa')[0]] =  open('tmp_seq/' + i)
-    #open_file.append([i, open('tmp_seq/' + onlyfile)])
-
+open_file = {i.split('.fa')[0]: open(f'tmp_seq/{i}') for i in onlyfile}
 # for i in range (1,23):
 #     try:
 #         open_file.append(open('chr' + str(i) + '.fa_seq.txt'))
@@ -196,7 +190,7 @@ for i in onlyfile:
 #     open_file.append(open('chr' + '1' + '.fa_seq.txt')) #TODO sistemare per indicare che se non ho iupac nella pam non ho questo file
 # count21 = 0
 # count22 = 0
-with open(sys.argv[1]) as uniq, open(name_output + '.pamcreation.txt', 'w+') as res:
+with (open(sys.argv[1]) as uniq, open(f'{name_output}.pamcreation.txt', 'w+') as res):
     for line in uniq:
         if '#' in line:
             continue
@@ -223,9 +217,9 @@ with open(sys.argv[1]) as uniq, open(name_output + '.pamcreation.txt', 'w+') as 
                     ref_char = rev_comp(ref_char)
                 # if int(line[4]) == 22687078:
                 #     print('Ref char:' , ref_char)
-                
+
                 char_to_write = iupac_code_set[pam[pos]] & iupac_code_set[ref_char]
-                
+
                 # if int(line[4]) == 22687078:
                 #     print('Char to write:', char_to_write)
                 if not char_to_write:
@@ -240,10 +234,7 @@ with open(sys.argv[1]) as uniq, open(name_output + '.pamcreation.txt', 'w+') as 
                 total_line.append(char)
             # if int(line[4]) == 22687078:
             #     print('Total_line', total_line)
-        
-        #Total
-        #line.append(str(int(line[6]) + int(line[7])))
-         #Min
+
         line.append('-')
         #max
         line.append('-')
@@ -251,15 +242,13 @@ with open(sys.argv[1]) as uniq, open(name_output + '.pamcreation.txt', 'w+') as 
         line.append('n')
         #Pam create
         if found_creation:
-            list_pam = []
-            for el in itertools.product(*total_line):
-                list_pam.append(''.join(el))
+            list_pam = [''.join(el) for el in itertools.product(*total_line)]
             line.append(','.join(list_pam))
         else:
             line.append('n')
         #Var uniq
         line.append('y')
-        
+
         res.write('\t'.join(line) + '\n') 
 
 
@@ -283,7 +272,7 @@ with open(sys.argv[1]) as uniq, open(name_output + '.pamcreation.txt', 'w+') as 
 #                 total_line = total_line + char_to_write +';'
 #             else: 
 #                 total_line = total_line + '-;'
-            
+
 #         line.append(str(int(line[6]) + int(line[7])))
 #          #Min
 #         line.append('-')
@@ -295,7 +284,7 @@ with open(sys.argv[1]) as uniq, open(name_output + '.pamcreation.txt', 'w+') as 
 #         line.append(total_line)
 #         #Var uniq
 #         line.append('y')
-        
+
 #         res.write('\t'.join(line) + '\n') 
 
 # for i in range(len(open_file)):
