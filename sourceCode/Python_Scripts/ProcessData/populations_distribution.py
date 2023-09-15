@@ -59,7 +59,7 @@ plt.style.use('seaborn-poster')
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 
-barplot_values = dict()         #barplot_values -> EAS -> [1,2]
+barplot_values = {}
 total = int(sys.argv[2])
 guide = sys.argv[3]
 max_value = 0
@@ -79,7 +79,7 @@ with open(sys.argv[1]) as summary:
                 line = line.split('\t')
                 number_bars = len(line[total + 1].split(','))
                 barplot_values[line[0]] = [int(x) for x in line[total + 1].split(',')]       #line = EAS 0,7 1,2 5,3 10,11                
-                value = sum([int(x) for x in line[total + 1].split(',')] )
+                value = sum(int(x) for x in line[total + 1].split(','))
                 previous_bar.append(0)
                 if value > max_value:
                     max_value = value
@@ -94,7 +94,7 @@ except:
 width = 0.5
 
 population_color = ['purple', 'orange', 'green', 'blue', 'red']
-if 'REFERENCE' in barplot_values.keys():
+if 'REFERENCE' in barplot_values:
     population_color.insert(0, 'grey')
 if len(barplot_values.keys()) > len(population_color):  #If i have more than 5 superpopulations + ref
     for i in mc.TABLEAU_COLORS:
@@ -117,25 +117,33 @@ legend_labels = []
 handles_color = []
 for x in range(min(number_bars, total+1)):
     if x == 0:
-        legend_labels.append(str(total) + ' MM')            #got Total mms and 0 bulges
+        legend_labels.append(f'{total} MM')
         handles_color.append((all_bar[0][:]))
     else:
-        if (total - x) < 0:                                 #To avoid negative numbers on MM values
-            legend_labels.append('0 MM + ' + str(x) + ' B')
-            handles_color.append((all_bar[x][:]))
+        if (total - x) < 0:                         #To avoid negative numbers on MM values
+            legend_labels.append(f'0 MM + {str(x)} B')
         else:
-            legend_labels.append(str(total - x ) + ' MM + ' + str(x) + ' B')
-            handles_color.append((all_bar[x][:]))
+            legend_labels.append(f'{str(total - x)} MM + {str(x)} B')
+        handles_color.append((all_bar[x][:]))
 legend_labels.reverse()
 # handles_color = [(x[:]) for x in all_bar]
 handles_color.reverse()
 plt.legend(handles_color, legend_labels, fontsize=15, handlelength = 10,handler_map={tuple: HandlerTuple(ndivide=None)})
 # first param is for the colored rectangles of legens, second parameter for labels, handlelength is size of rectangles, handlermap is for grouping different colors in single label
 #[(first bar color, second bar color, ...), (first bar light color, second bar light color,...)]
-plt.title('Targets found in each Superpopulation - ' + str(total) + ' Mismatches(MM) + Bulges(B)', size=23)
+plt.title(
+    f'Targets found in each Superpopulation - {total} Mismatches(MM) + Bulges(B)',
+    size=23,
+)
 
 if no_result:
-    plt.annotate('No targets found with ' + str(total)  + ' mismatches + bulges', (2.5,0) ,size = 22, ha = 'center', va = 'center')  #2.5 is x position
+    plt.annotate(
+        f'No targets found with {total} mismatches + bulges',
+        (2.5, 0),
+        size=22,
+        ha='center',
+        va='center',
+    )
     sys.exit()
 
 

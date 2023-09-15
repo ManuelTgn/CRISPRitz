@@ -32,22 +32,18 @@ def indexGenome():
     # retrive PAM
     PAM = filePAM.read()
     PAM_size = int(PAM.split()[1])
-    if(PAM_size < 0):
-        PAM_size = PAM_size * -1
-        PAM = PAM.split()[0][0:PAM_size]
+    if (PAM_size < 0):
+        PAM_size *= -1
+        PAM = PAM.split()[0][:PAM_size]
     else:
         PAM = PAM.split()[0][-PAM_size:]
 
-    TSTgenome = PAM + "_" + nameGenome					# name of the genome in TST format
-    dirTSTgenome = "./genome_library/" + TSTgenome		# dir of the genome in TST format
+    TSTgenome = f"{PAM}_{nameGenome}"
+    dirTSTgenome = f"./genome_library/{TSTgenome}"
 
     print(TSTgenome, "Indexing generation:")
 
-    # variant
-    variant = 0
-    if "-var" in sys.argv[1:]:
-        variant = 1
-
+    variant = 1 if "-var" in sys.argv[1:] else 0
     if os.path.isdir(dirTSTgenome):							# check if TSTgenome dir exists
         shutil.rmtree(dirTSTgenome)							# remove old TSTgenome dir
     os.makedirs(dirTSTgenome)								# build new TSTgenome dir
@@ -57,10 +53,16 @@ def indexGenome():
     start_time = time.time()
     for f in listChrs:
         print("Indexing:", f)
-        subprocess.run([origin_path+"/buildTST", str(dirGenome) +
-                        "/"+str(f), str(dirPAM), str(variant)])
+        subprocess.run(
+            [
+                f"{origin_path}/buildTST",
+                f"{str(dirGenome)}/{str(f)}",
+                str(dirPAM),
+                str(variant),
+            ]
+        )
     print("Finish indexing")
-    print("Indexing runtime: %s seconds" % (time.time() - start_time))
+    print(f"Indexing runtime: {time.time() - start_time} seconds")
 
 
 def searchTST():
@@ -69,7 +71,7 @@ def searchTST():
     PAM = sys.argv[3]								# save PAM
     fileGuide = os.path.realpath(sys.argv[4])
     nameResult = (sys.argv[5])  # name of result file
-    dirTSTgenome = os.path.realpath(sys.argv[2])+"/"
+    dirTSTgenome = f"{os.path.realpath(sys.argv[2])}/"
 
     if not os.path.isdir(dirTSTgenome):				# check if TSTgenome dir exists
         print("ATTENTION! You have to generate the index of \"" + nameGenome +
@@ -135,15 +137,27 @@ def searchTST():
     # run searchOnTST
     print("Search START")
     start_time = time.time()
-    subprocess.run([origin_path+"/searchTST", str(dirTSTgenome), str(fileGuide),
-                    str(mm), str(bDNA), str(bRNA), str(PAM), str(nameResult), str(r), str(th)])
+    subprocess.run(
+        [
+            f"{origin_path}/searchTST",
+            str(dirTSTgenome),
+            str(fileGuide),
+            str(mm),
+            str(bDNA),
+            str(bRNA),
+            str(PAM),
+            str(nameResult),
+            r,
+            str(th),
+        ]
+    )
     print("Search END")
-    print("Search runtime: %s seconds" % (time.time() - start_time))
+    print(f"Search runtime: {time.time() - start_time} seconds")
 
 
 def searchBruteForce():
 
-    genomeDir = os.path.realpath(sys.argv[2])+"/"
+    genomeDir = f"{os.path.realpath(sys.argv[2])}/"
     filePAM = os.path.realpath(sys.argv[3])
     fileGuide = os.path.realpath(sys.argv[4])
     result = sys.argv[5]
@@ -182,18 +196,25 @@ def searchBruteForce():
         print("Please select an output")
         sys.exit()
 
-    # variant
-    variant = 0
-    if "-var" in sys.argv[1:]:
-        variant = 1
-
+    variant = 1 if "-var" in sys.argv[1:] else 0
     # run searchBruteForce
     print("Search START")
     start_time = time.time()
-    subprocess.run([origin_path+"/searchBruteForce", str(genomeDir), str(filePAM),
-                    str(fileGuide), str(mm), str(result), str(th), str(r), str(variant)])
+    subprocess.run(
+        [
+            f"{origin_path}/searchBruteForce",
+            str(genomeDir),
+            str(filePAM),
+            str(fileGuide),
+            str(mm),
+            str(result),
+            str(th),
+            r,
+            str(variant),
+        ]
+    )
     print("Search END")
-    print("Search runtime: %s seconds" % (time.time() - start_time))
+    print(f"Search runtime: {time.time() - start_time} seconds")
 
 
 def annotateResults():
@@ -251,10 +272,21 @@ def annotateResults():
 
     print("Annotation START")
     start_time = time.time()
-    subprocess.run([origin_path+'/Python_Scripts/Annotator/annotator.py', str(exonFile),
-                    str(intronFile), str(promoterFile), str(ctcfFile), str(dnaseFile), guidesFile, resultsFile, outputFile])
+    subprocess.run(
+        [
+            f'{origin_path}/Python_Scripts/Annotator/annotator.py',
+            str(exonFile),
+            str(intronFile),
+            str(promoterFile),
+            str(ctcfFile),
+            str(dnaseFile),
+            guidesFile,
+            resultsFile,
+            outputFile,
+        ]
+    )
     print("Annotation END")
-    print("Annotation runtime: %s seconds" % (time.time() - start_time))
+    print(f"Annotation runtime: {time.time() - start_time} seconds")
 
 
 def genomeEnrichment():
@@ -273,9 +305,13 @@ def genomeEnrichment():
     print("Variants Extraction START")
     start_time = time.time()
     subprocess.run(
-        [origin_path+'/Python_Scripts/Enrichment/bcf_query.sh', dirVCFFiles+'/'])
+        [
+            f'{origin_path}/Python_Scripts/Enrichment/bcf_query.sh',
+            f'{dirVCFFiles}/',
+        ]
+    )
     print("Variants Extraction END")
-    print("Runtime: %s seconds" % (time.time() - start_time))
+    print(f"Runtime: {time.time() - start_time} seconds")
 
     os.chdir("../")
     listChrs = os.listdir(dirParsedFiles)
@@ -284,10 +320,7 @@ def genomeEnrichment():
 
     if (os.path.isdir(dirEnrichedGenome)):
         shutil.rmtree(dirEnrichedGenome)
-        os.makedirs(dirEnrichedGenome)
-    else:
-        os.makedirs(dirEnrichedGenome)
-
+    os.makedirs(dirEnrichedGenome)
     os.chdir(dirEnrichedGenome)
     os.makedirs("./SNPs_genome/")
     os.makedirs("./INDELs_genome/")
@@ -297,14 +330,19 @@ def genomeEnrichment():
     start_time = time.time()
     for f in listChrs:
         splitf = f.split('.')
-        altfile = str('../'+dirParsedFiles+splitf[0]+'.alt')
-        genfile = str(dirGenome+'/'+splitf[0]+'.fa')
+        altfile = str(f'../{dirParsedFiles}{splitf[0]}.alt')
+        genfile = str(f'{dirGenome}/{splitf[0]}.fa')
         print("Adding Variants to:", splitf[0])
         subprocess.run(
-            [origin_path+'/Python_Scripts/Enrichment/enricher.py', altfile, genfile])
+            [
+                f'{origin_path}/Python_Scripts/Enrichment/enricher.py',
+                altfile,
+                genfile,
+            ]
+        )
 
     print("Variants Adding END")
-    print("Runtime: %s seconds" % (time.time() - start_time))
+    print(f"Runtime: {time.time() - start_time} seconds")
 
     os.chdir("../")
     shutil.rmtree(dirParsedFiles)
@@ -369,33 +407,51 @@ def generateReport():
         summaryTwo = (sys.argv).index("-sumenr") + 1
         summaryTwo = os.path.realpath(sys.argv[summaryTwo])
 
-    geckoProfile = "no"
     geckoExonsCount = "no"
     geckoIntronsCount = "no"
     geckoPromotersCount = "no"
     geckoDNAseCount = "no"
     geckoCTCFCount = "no"
 
+    geckoProfile = "no"
     if "-gecko" in sys.argv[1:]:
-        geckoProfile = origin_path + \
-            '/Python_Scripts/Plot/gecko/gecko.reference.profile.xls'
-        geckoExonsCount = origin_path + \
-            '/Python_Scripts/Plot/gecko/gecko.Exons.Count.txt'
-        geckoIntronsCount = origin_path + \
-            '/Python_Scripts/Plot/gecko/gecko.Introns.Count.txt'
-        geckoPromotersCount = origin_path + \
-            '/Python_Scripts/Plot/gecko/gecko.Promoters.Count.txt'
-        geckoDNAseCount = origin_path + \
-            '/Python_Scripts/Plot/gecko/gecko.DNAse.Count.txt'
-        geckoCTCFCount = origin_path + \
-            '/Python_Scripts/Plot/gecko/gecko.CTCF.Count.txt'
+        geckoProfile = f'{origin_path}/Python_Scripts/Plot/gecko/gecko.reference.profile.xls'
+        geckoExonsCount = (
+            f'{origin_path}/Python_Scripts/Plot/gecko/gecko.Exons.Count.txt'
+        )
+        geckoIntronsCount = (
+            f'{origin_path}/Python_Scripts/Plot/gecko/gecko.Introns.Count.txt'
+        )
+        geckoPromotersCount = f'{origin_path}/Python_Scripts/Plot/gecko/gecko.Promoters.Count.txt'
+        geckoDNAseCount = (
+            f'{origin_path}/Python_Scripts/Plot/gecko/gecko.DNAse.Count.txt'
+        )
+        geckoCTCFCount = (
+            f'{origin_path}/Python_Scripts/Plot/gecko/gecko.CTCF.Count.txt'
+        )
 
-    subprocess.run([origin_path + '/Python_Scripts/Plot/radar_chart_docker.py', str(profileFile), str(extProfileFile), str(exonFile),
-                    str(intronFile), str(promoterFile), str(dnaseFile), str(
-                        ctcfFile), guidesFile, str(mm), str(geckoProfile),
-                    str(geckoExonsCount), str(geckoIntronsCount), str(
-                        geckoPromotersCount), str(geckoDNAseCount), str(geckoCTCFCount),
-                    str(summaryOne), str(summaryTwo)])
+    subprocess.run(
+        [
+            f'{origin_path}/Python_Scripts/Plot/radar_chart_docker.py',
+            str(profileFile),
+            str(extProfileFile),
+            str(exonFile),
+            str(intronFile),
+            str(promoterFile),
+            str(dnaseFile),
+            str(ctcfFile),
+            guidesFile,
+            str(mm),
+            geckoProfile,
+            geckoExonsCount,
+            geckoIntronsCount,
+            geckoPromotersCount,
+            geckoDNAseCount,
+            geckoCTCFCount,
+            str(summaryOne),
+            str(summaryTwo),
+        ]
+    )
 
 
 if len(sys.argv) < 2:

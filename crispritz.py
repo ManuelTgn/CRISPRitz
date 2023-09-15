@@ -32,10 +32,9 @@ def checkExistance(f_path, element):
         if not isfile(f_path):
             print('ERROR! ' + f_path + ' is not a file.')
             sys.exit()
-    else:  # check directory
-        if not isdir(f_path):
-            print('ERROR! ' + f_path + ' is not a directory.')
-            sys.exit()
+    elif not isdir(f_path):
+        print('ERROR! ' + f_path + ' is not a directory.')
+        sys.exit()
 
 # ALL ACTIVE FUNCTIONS IN CRISPRITZ
 
@@ -73,9 +72,9 @@ def indexGenome():
     # retrive PAM
     PAM = filePAM.read()
     PAM_size = int(PAM.split()[1])
-    if(PAM_size < 0):
-        PAM_size = PAM_size * -1
-        PAM = PAM.split()[0][0:PAM_size]
+    if (PAM_size < 0):
+        PAM_size *= -1
+        PAM = PAM.split()[0][:PAM_size]
     else:
         PAM = PAM.split()[0][-PAM_size:]
 
@@ -109,10 +108,17 @@ def indexGenome():
         if f.strip().split('.')[-1] != 'fa':
             continue
         print("Indexing:", f)
-        subprocess.run([corrected_origin_path+"buildTST",
-                        str(dirGenome)+"/"+str(f), str(dirPAM), str(th), max_bulges])
+        subprocess.run(
+            [
+                corrected_origin_path + "buildTST",
+                f"{str(dirGenome)}/{str(f)}",
+                str(dirPAM),
+                str(th),
+                max_bulges,
+            ]
+        )
     print("Finish indexing")
-    print("Indexing runtime: %s seconds" % (time.time() - start_time))
+    print(f"Indexing runtime: {time.time() - start_time} seconds")
 
 
 def searchTST():
@@ -213,20 +219,34 @@ def searchTST():
                 "ERROR! Please select the directory containing the fasta files of the genome")
             sys.exit()
         checkExistance(idx_genome_fasta, 'd')
-    # Check input correctness
-    file_correct_ext = [f for f in listdir(dirTSTgenome) if isfile(join(
-        dirTSTgenome, f)) and not f.endswith('.bin')]  # Get files not ending with .bin
-    if len(file_correct_ext) != 0:		# Some files do not have .bin
+    if file_correct_ext := [
+        f
+        for f in listdir(dirTSTgenome)
+        if isfile(join(dirTSTgenome, f)) and not f.endswith('.bin')
+    ]:
         print('ERROR! The directory contains files that are not compatible with the selected search type. Please ensure that the input directory contains only .bin files')
         sys.exit()
 
     # run searchOnTST
     print("Search START")
     start_time = time.time()
-    subprocess.run([corrected_origin_path+"searchTST", str(dirTSTgenome), str(fileGuide),
-                    str(mm), str(bDNA), str(bRNA), str(PAM), str(nameResult), str(r), str(th), max_bulges])
+    subprocess.run(
+        [
+            corrected_origin_path + "searchTST",
+            str(dirTSTgenome),
+            str(fileGuide),
+            str(mm),
+            str(bDNA),
+            str(bRNA),
+            str(PAM),
+            str(nameResult),
+            r,
+            str(th),
+            max_bulges,
+        ]
+    )
     print("Search END")
-    print("Search runtime: %s seconds" % (time.time() - start_time))
+    print(f"Search runtime: {time.time() - start_time} seconds")
     if "-scores" in sys.argv[1:]:
 
         try:
@@ -322,20 +342,35 @@ def searchBruteForce():
     checkExistance(filePAM, 'f')
     checkExistance(fileGuide, 'f')
 
-    file_correct_ext = [f for f in listdir(genomeDir) if isfile(join(genomeDir, f)) and not (
-        f.endswith('.fa') or f.endswith('.fasta') or f.endswith('.fai'))]
-
-    if len(file_correct_ext) != 0:  # Some file other than .fa, .fasta or .fai are present in the directory
+    if file_correct_ext := [
+        f
+        for f in listdir(genomeDir)
+        if isfile(join(genomeDir, f))
+        and not f.endswith('.fa')
+        and not f.endswith('.fasta')
+        and not f.endswith('.fai')
+    ]:
         print('ERROR! The directory contains files that are not compatible with the selected search type. Please ensure that the input directory contains only .fa files (.fai files are accepted and automatically skipped from the search)')
         sys.exit()
 
     # run searchBruteForce
     print("Search START")
     start_time = time.time()
-    subprocess.run([corrected_origin_path+"searchBruteForce", str(genomeDir), str(
-        filePAM),	str(fileGuide), str(mm), str(result), str(th), str(r), str(variant)])
+    subprocess.run(
+        [
+            corrected_origin_path + "searchBruteForce",
+            str(genomeDir),
+            str(filePAM),
+            str(fileGuide),
+            str(mm),
+            str(result),
+            str(th),
+            r,
+            str(variant),
+        ]
+    )
     print("Search END")
-    print("Search runtime: %s seconds" % (time.time() - start_time))
+    print(f"Search runtime: {time.time() - start_time} seconds")
 
     if "-scores" in sys.argv[1:]:
         try:
@@ -427,7 +462,7 @@ def annotateResults():
                     annotationsFile, resultsFile, outputFile, sampleIDfile, sys.argv[-1]])
     if 'Step' not in step:
         print("Annotation END")
-        print("Annotation runtime: %s seconds" % (time.time() - start_time))
+        print(f"Annotation runtime: {time.time() - start_time} seconds")
 
 
 def genomeEnrichment_subprocess_VCF(altfile, genfile, dirGenome, doit, dirVCFFiles):
@@ -449,14 +484,12 @@ def genomeEnrichment():
 
     dirVCFFiles = os.path.realpath(sys.argv[2])
     dirGenome = os.path.realpath(sys.argv[3])
-    doit = 'no'
-    if len(sys.argv) > 4 and sys.argv[4] == 'true':
-        doit = 'yes'
+    doit = 'yes' if len(sys.argv) > 4 and sys.argv[4] == 'true' else 'no'
     checkExistance(dirVCFFiles, 'd')
     checkExistance(dirGenome, 'd')
     listChrs = os.listdir(dirVCFFiles)
     # listChrs = glob.glob(dirVCFFiles+'/*.vcf.gz')
-    
+
     for file in listChrs:
         if file.endswith('.tbi'): #remove .tbi files
             listChrs.remove(file)
@@ -479,8 +512,11 @@ def genomeEnrichment():
         contains_enr = '.enriched'
     elif '.indels.' in list_file_ends[0]:
         contains_enr = '.indels'
-    chr_wihtout_vcf = set([f.split(contains_enr + '.fa')[0]
-                           for f in listdir(dirGenome) if isfile(join(dirGenome, f))]) - chr_with_vcf
+    chr_wihtout_vcf = {
+        f.split(f'{contains_enr}.fa')[0]
+        for f in listdir(dirGenome)
+        if isfile(join(dirGenome, f))
+    } - chr_with_vcf
 
     # read number of mismatches
     th = 1
@@ -504,12 +540,9 @@ def genomeEnrichment():
         os.makedirs("./INDELs_genome/")
     os.chdir("./INDELs_genome/")
 
-    memo = open('change_version.txt', 'w')
-
-    memo.write('CRISPRitz indels process is now obsolete and has been removed, if you want to process indels you can download our new tool CRISPRme, https://github.com/samuelecancellieri/CRISPRme'+'\n')
-    memo.write('Thank you')
-
-    memo.close()
+    with open('change_version.txt', 'w') as memo:
+        memo.write('CRISPRitz indels process is now obsolete and has been removed, if you want to process indels you can download our new tool CRISPRme, https://github.com/samuelecancellieri/CRISPRme'+'\n')
+        memo.write('Thank you')
 
     os.chdir('../')
     # os.chdir(dirParsedFiles)
@@ -540,7 +573,7 @@ def genomeEnrichment():
                         dirGenome.split('/')[-1] + '_enriched/' + f + '.enriched.' + file_ends])
 
     print("Variants Extraction and Processing END")
-    print("Runtime: %s seconds" % (time.time() - start_time))
+    print(f"Runtime: {time.time() - start_time} seconds")
 
 
 def generateReport():
@@ -556,11 +589,7 @@ def generateReport():
         sys.exit()
 
     # NOTE barplot is ok only when -annotator and profile, ext are from var, -sumref is from ref
-    if '-mm' in sys.argv[2]:
-        guide = 'no'
-    else:
-        guide = sys.argv[2]
-
+    guide = 'no' if '-mm' in sys.argv[2] else sys.argv[2]
     mm = 0
     if "-mm" in sys.argv[1:]:
         try:
@@ -598,10 +627,7 @@ def generateReport():
         geckoProfile = corrected_origin_path + \
             'Python_Scripts/Plot/gecko.summary.total.Annotation.summary.txt'
 
-    if '-ws' in sys.argv[:]:
-        web_server = '-ws'
-    else:
-        web_server = ''
+    web_server = '-ws' if '-ws' in sys.argv[:] else ''
     if '-sample' in sys.argv[:]:
         sample_name = sys.argv.index('-sample')
         sample_name = sys.argv[sample_name + 1]
@@ -610,8 +636,20 @@ def generateReport():
         sample_name = ''
         sample_opt = ''
 
-    subprocess.run([corrected_origin_path + 'Python_Scripts/Plot/radar_chart.py', str(guide), str(mm), str(summaryTwo), str(extProfileFile), str(summaryOne),
-                    str(geckoProfile), web_server, sample_opt, sample_name])
+    subprocess.run(
+        [
+            corrected_origin_path + 'Python_Scripts/Plot/radar_chart.py',
+            str(guide),
+            str(mm),
+            str(summaryTwo),
+            str(extProfileFile),
+            str(summaryOne),
+            geckoProfile,
+            web_server,
+            sample_opt,
+            sample_name,
+        ]
+    )
 
 
 def removeFile(to_remove):

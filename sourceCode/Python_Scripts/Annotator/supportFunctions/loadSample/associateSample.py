@@ -35,20 +35,20 @@ def loadSampleAssociation(id_sample_file):
         sys.exit() 
         return None, None
 
-    sample_to_pop = dict()
-    pop_to_superpop = dict() 
-    superpop_to_pop = dict()   #For each superpopulation returns list of population
-    pop_to_sample = dict()      #For each population return list of sample
+    sample_to_pop = {}
+    pop_to_superpop = {}
+    superpop_to_pop = {}
+    pop_to_sample = {}
     all_samples = set()
     all_pop= set()
     all_superpop = set()
-    gender_sample = dict()
+    gender_sample = {}
     with open (id_sample_file) as in_file:
         #Check correct format of file
         line = next(in_file)
         if '#' in line:
             line = next(in_file)    #Skip header
-        
+
         line = line.strip().split('\t')
 
         if len(line) < 3:
@@ -59,7 +59,7 @@ def loadSampleAssociation(id_sample_file):
         #Add info of first line
         sample_to_pop[line[0]] = line[1]
         pop_to_superpop[line[1]] = line[2]
-        
+
         superpop_to_pop[line[2]] = [line[1]]
         pop_to_sample[line[1]] = line[0]
 
@@ -87,7 +87,7 @@ def loadSampleAssociation(id_sample_file):
             except:
                 pop_to_sample[line[1]] = set()
                 pop_to_sample[line[1]].add(line[0])
-            
+
             all_samples.add(line[0])
             all_pop.add(line[1])
             all_superpop.add(line[2])

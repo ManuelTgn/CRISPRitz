@@ -172,7 +172,7 @@ with open (sys.argv[5]) as pam:
     if len_pam < 0:
         guide_len = len(pam) + len_pam
         pam = pam[: (len_pam * (-1))]
-        len_pam = len_pam * (-1)
+        len_pam *= -1
         pos_beg = len_pam
         pos_end = None
         pam_begin = 0
@@ -239,14 +239,9 @@ total_line = int(out.decode('UTF-8').split(' ')[0])
 if total_line < 1:
     print('WARNING! Input file has no targets')
     sys.exit()
-if total_line < 10:
-    mod_tot_line = 1
-else:
-    mod_tot_line = int(total_line/10)
+mod_tot_line = 1 if total_line < 10 else total_line // 10
 #VARIABLE INIT
 guideDict = {}
-totalDict = {}
-
 start_time = time.time()
 
 if 'Step' in step:
@@ -264,12 +259,14 @@ for line in inAnnotationFile:
     annotationsTree[int(x[1]):int(x[2])] = str(x[0])+'\t'+str(x[3])
     annotationsSet.add(str(x[3]))
 
-totalDict['targets'] = [0]*10
+totalDict = {'targets': [0] * 10}
 for item in annotationsSet:
     totalDict[item] = [0]*10
 
 if 'Step' not in step:
-    print("PRELIMINARY OPERATIONS COMPLETED IN: %s seconds" % (time.time() - start_time))
+    print(
+        f"PRELIMINARY OPERATIONS COMPLETED IN: {time.time() - start_time} seconds"
+    )
 
 start_time = time.time()
 if 'Step' in step:
@@ -347,25 +344,17 @@ header_list = header.strip().split('\t')
 
 Per pop e superpop, se ho due sample stessa famiglia stesso target, conto solo una volta (visited_pop and visited_superpop array)
 '''
-count_sample = dict()       #NOTE cout_sample -> GUIDE -> SAMPLE -> has targets + ann1 + ann2 ... + refposition
-    #refposition is a key unrelated to the other keys (targets ann1 ann2 ...) and it's used to classify the sample (0 0+ 1 1+).
-    #it's put in here just to avoid to duplicate the entire guide -> sample ->     structure
-    # refposition -> [class , number of specific VAR on target to add/remove]  #Save class (0 at start) and number of ontarget var specific
-    #for that sample.
-ontarget_reference_count = dict() #Count number of REF target and REF part of semicommon
-count_pop = dict()
-count_superpop = dict()     #NOTE added key 'distributions' for population distribution images
-    #count_superpop-> GUIDE -> SUPERPOP -> targets ann1 ann2 ... distributions
-    # distributions is an array of len mms+bulge, each position contains an array [0,0,0] of len bulge+1 (indicating no bulge, 1 bulge, 2bulge ...)
-
+count_sample = {}
+ontarget_reference_count = {}
+count_pop = {}
+count_superpop = {}
 #Create -Summary_total for a file ref.Annotation.summary.txt from the y and n values of Var_uniq column
 summary_barplot_from_total = False
 if 'Var_uniq' in header:
     summary_barplot_from_total = True
     vu_pos = header_list.index('Var_uniq')
-count_unique = dict()
-count_unique['targets'] = [0]*10
-count_unique_for_guide = dict()
+count_unique = {'targets': [0] * 10}
+count_unique_for_guide = {}
 for item in annotationsSet:
     count_unique[item] = [0]*10
 
@@ -377,13 +366,11 @@ current_chr = 'none'
 chr_name = 'none'
 
 def rev_comp(a):
-    if a == 'A' or a == 'a':
+    if a in ['A', 'a']:
         return 'T'
-    if a == 'T' or a == 't':
+    if a in ['T', 't']:
         return 'A'
-    if a == 'C' or a == 'c':
-        return 'G'
-    return 'C'
+    return 'G' if a in ['C', 'c'] else 'C'
 
 iupac_code = {
             "R":("A", "G"),
