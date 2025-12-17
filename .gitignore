@@ -1,11 +1,138 @@
-*.xlsx
-*.txt
-*.fa
-*.bin
-searchBruteForce
-*.txt
-*.zip
-*.pkl
-*.zip
-*.gz
-*.xls
+############################
+# OS / General
+############################
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.nfs*
+
+############################
+# C++ Build Artifacts
+############################
+# Compiled objects
+*.o
+*.obj
+*.lo
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Dependency files
+*.d
+*.dep
+
+############################
+# CMake
+############################
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+Makefile
+compile_commands.json
+
+# Build directories
+build/
+build-*/
+cmake-build-*/
+
+############################
+# Make / Autotools
+############################
+autom4te.cache/
+aclocal.m4
+config.log
+config.status
+configure
+depcomp
+install-sh
+missing
+ltmain.sh
+m4/
+*.la
+
+############################
+# Python
+############################
+# Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Packaging / build
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Python tools
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+coverage.xml
+.coverage
+htmlcov/
+
+############################
+# Jupyter
+############################
+.ipynb_checkpoints/
+
+############################
+# Logs & temp files
+############################
+*.log
+*.tmp
+
+############################
+# IDEs / Editors
+############################
+# VS Code
+.vscode/
+
+# CLion / JetBrains
+.idea/
+cmake-build-debug/
+cmake-build-release/
+
+# Vim
+*.vim
+*.vimrc
+
+# Emacs
+*~
+\#*\#
+
+############################
+# Static analysis / profiling
+############################
+*.gcda
+*.gcno
+*.gcov
+gmon.out
+perf.data*
+
+############################
+# Docker
+############################
+*.tar
