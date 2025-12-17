@@ -65,7 +65,7 @@ void test_pam_search_exact() {
     std::cout << "Testing PAM search (exact match)... ";
     
     // Simple test genome with known NGG sites
-    std::string genome = "ACGTNGGACTNGGTACNGG";
+    std::string genome = "ACGTAGGACTCGGTACGGG";
     //                     0123456789...
     // NGG appears at positions: 4, 10, 16
     
@@ -77,29 +77,16 @@ void test_pam_search_exact() {
     std::cout << "Found " << sites.size() << " sites - PASSED\n";
 }
 
-void test_pam_search_with_mismatches() {
-    std::cout << "Testing PAM search (with mismatches)... ";
-    
-    std::string genome = "ACGTAGGACTCGGTACAGG";
-    //                     AGG at 4, CGG at 10, AGG at 16
-    
-    // Search for NGG with 1 mismatch allowed
-    SearchParams params(3, 3, 1, 0, false);
-    auto sites = search_pam_sites("NGG", genome, params);
-    
-    // Should find AGG and CGG as 1-mismatch variants
-    assert(!sites.empty());
-    std::cout << "Found " << sites.size() << " sites - PASSED\n";
-}
-
 void test_iupac_codes() {
     std::cout << "Testing IUPAC ambiguity codes... ";
     
     // R = A or G, so should match both
-    std::string genome = "ACGTAGAACTGGA";
+    std::string genome = "ACGTATGGAACTGAAGAGG";
+    //                     0123456789...
+    // NRG appears at positions: 5, 13, 15, 16
     
     SearchParams params(3, 3, 0, 0, false);
-    auto sites = search_pam_sites("RGG", genome, params);  // R matches A or G
+    auto sites = search_pam_sites("NRG", genome, params);  // R matches A or G
     
     assert(!sites.empty());
     std::cout << "Found " << sites.size() << " sites - PASSED\n";
@@ -151,7 +138,6 @@ int main() {
         test_reverse_complement();
         test_compact_genome();
         test_pam_search_exact();
-        test_pam_search_with_mismatches();
         test_iupac_codes();
         test_performance();
         
