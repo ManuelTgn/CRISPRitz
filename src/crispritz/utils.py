@@ -4,6 +4,18 @@ from pathlib import Path
 
 import os
 
+# ------------------------------------------------------------------------------
+# define static variables
+
+# toolname and command
+TOOLNAME = "CRISPRitz"
+COMMAND = "crispritz"
+
+
+
+# ------------------------------------------------------------------------------
+# define utility functions
+
 def validate_directory(path: str, create: bool = False) -> Path:
     dir_path = Path(path).resolve()
     if not dir_path.exists():
