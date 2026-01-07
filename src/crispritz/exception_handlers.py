@@ -3,6 +3,7 @@
 import sys
 import os
 
+
 def sigint_handler() -> None:
     """Handle SIGINT (interrupt signal) to exit the program gracefully.
 

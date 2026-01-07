@@ -6,15 +6,23 @@ import os
 
 # ------------------------------------------------------------------------------
 # define static variables
+# ------------------------------------------------------------------------------
 
 # toolname and command
 TOOLNAME = "CRISPRitz"
 COMMAND = "crispritz"
 
+# verbosity levels
+VERBOSITYLVL = [0, 1, 2, 3]
+
+# sub commands
+SUBCOMMANDS = ["add-variants"]
 
 
 # ------------------------------------------------------------------------------
 # define utility functions
+# ------------------------------------------------------------------------------
+
 
 def validate_directory(path: str, create: bool = False) -> Path:
     dir_path = Path(path).resolve()
@@ -27,6 +35,6 @@ def validate_directory(path: str, create: bool = False) -> Path:
         raise NotADirectoryError(f"Not a directory: {path}")
     return dir_path
 
+
 def find_fasta_index(fasta_path: str) -> bool:
     return os.path.isfile(f"{fasta_path}.fai")
-
