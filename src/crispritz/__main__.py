@@ -1,7 +1,7 @@
 """
 CRISPRitz {version}
 
-Copyright (C) 2026 Pinellolab <lpinello@mgh.harvard.edu>
+Copyright (C) 2026 Pinello Lab & InfOmics Lab <lpinello@mgh.harvard.edu> <rosalba.giugno@univr.it>
 
 CRISPRitz: High-Throughput and Variant-Aware In Silico Off-Target Sites Identification
 For CRISPR Genome Editing
@@ -19,6 +19,7 @@ from .utils import TOOLNAME, SUBCOMMANDS
 from .crispritz_argparse import CrispritzArgumentParser, CrispritzEnrichmentInputArgs
 from .version import __version__
 from .exception_handlers import sigint_handler
+from .enricher import add_variants
 
 from argparse import _SubParsersAction
 from time import time
@@ -126,8 +127,8 @@ def create_enrichment_parser(subparser: _SubParsersAction) -> _SubParsersAction:
         metavar="OUTDIR",
         dest="outdir",
         required=False,
-        default=os.path.join(os.getcwd(), "variants_genome"),
-        help="Directory where output files will be written. "
+        default=os.getcwd(),
+        help="Directory where output folder will be written. "
         "(default: a `variants_genome` folder will be created in the current "
         "working directory)",
     )
@@ -167,8 +168,7 @@ def main():
             parser.error_noargs()
         args = parser.parse_args(sys.argv[1:])  # parse input args
         if args.command == SUBCOMMANDS[0]:  # add-variants
-            _ = CrispritzEnrichmentInputArgs(args, parser)
-            print("add-variants running")
+            add_variants(CrispritzEnrichmentInputArgs(args, parser))
     except KeyboardInterrupt:
         sigint_handler()  # catch SIGINT and exit gracefully
     sys.stdout.write(f"{TOOLNAME} - Elapsed time {time() - start:.2f}s\n")

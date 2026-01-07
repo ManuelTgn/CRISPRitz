@@ -12,7 +12,8 @@ version = "3.0.0"
 description = "CRISPRitz: High-Throughput and Variant-Aware In Silico Off-Target Sites Identification For CRISPR Genome Editing"
 readme = "README.md"
 authors = [
-    {name = "Pinellolab", email = "lpinello@mgh.harvard.edu"}
+    {name = "Pinello Lab", email = "lpinello@mgh.harvard.edu"},
+    {name = "InfOmics Lab", email = "rosalba.giugno@univr.it"}
 ]
 maintainers = [
     {name = "Manuel Tognon", email = "manu.tognon@gmail.com"}

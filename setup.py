@@ -15,7 +15,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 setup(
     name="crispritz",
     version="3.0.0",
-    author="Pinellolab",
+    author="Pinello Lab & InfOmics Lab",
     author_email="lpinello@mgh.harvard.edu",
     description="CRISPRitz: High-Throughput and Variant-Aware In Silico "
     "Off-Target Sites Identification For CRISPR Genome Editing",
