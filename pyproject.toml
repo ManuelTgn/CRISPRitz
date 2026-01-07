@@ -1,0 +1,141 @@
+# =============================================================================
+# pyproject.toml
+# =============================================================================
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "crispritz"
+version = "3.0.0"
+description = "CRISPRitz: High-Throughput and Variant-Aware In Silico Off-Target Sites Identification For CRISPR Genome Editing"
+readme = "README.md"
+authors = [
+    {name = "Pinellolab", email = "lpinello@mgh.harvard.edu"}
+]
+maintainers = [
+    {name = "Manuel Tognon", email = "manu.tognon@gmail.com"}
+]
+license = {text = "AGPL-3"}
+keywords = ["CRISPR", "guide RNA", "off-target", "variant", "bioinformatics"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+requires-python = ">=3.8"
+dynamic = ["dependencies"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black",
+    "flake8",
+    "mypy",
+]
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme",
+]
+
+[project.scripts]
+crispritz = "crispritz.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/pinellolab/CRISPRitz"
+Documentation = "https://github.com/pinellolab/CRISPRitz"
+Repository = "https://github.com/pinellolab/CRISPRitz"
+"Bug Tracker" = "https://github.com/pinellolab/CRISPRitz/issues"
+Changelog = "https://github.com/pinellolab/CRISPRitz/blob/main/CHANGELOG.md"
+
+# =============================================================================
+# Tool configurations
+# =============================================================================
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+# =============================================================================
+# Development tool configurations
+# =============================================================================
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --tb=short"
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["crispritz"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "crispritz.*"
+ignore_errors = false
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    "*.egg-info",
+]
+
+[tool.coverage.run]
+source = ["src/crispritz"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
