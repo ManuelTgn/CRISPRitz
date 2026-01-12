@@ -1,5 +1,6 @@
 """ """
 
+
 class CrispritzError(Exception):
     def __init__(self, value: str):
         # initialize exception object when raised
@@ -7,7 +8,8 @@ class CrispritzError(Exception):
 
     def __str__(self):
         return repr(self._value)  # string representation for the exception
-    
+
+
 class CrispritzEnrichmentError(CrispritzError):
     def __init__(self, value: str):
         # initialize exception object when raised
@@ -15,7 +17,8 @@ class CrispritzEnrichmentError(CrispritzError):
 
     def __str__(self):
         return super().__str__()  # string representation for the exception
-    
+
+
 class EnrichmentPairError(CrispritzEnrichmentError):
     def __init__(self, value: str):
         # initialize exception object when raised
@@ -23,7 +26,8 @@ class EnrichmentPairError(CrispritzEnrichmentError):
 
     def __str__(self):
         return super().__str__()  # string representation for the exception
-    
+
+
 class GenomeReaderError(CrispritzEnrichmentError):
     def __init__(self, value: str):
         # initialize exception object when raised
@@ -31,7 +35,8 @@ class GenomeReaderError(CrispritzEnrichmentError):
 
     def __str__(self):
         return super().__str__()  # string representation for the exception
-    
+
+
 class GenomeWriterError(CrispritzEnrichmentError):
     def __init__(self, value: str):
         # initialize exception object when raised

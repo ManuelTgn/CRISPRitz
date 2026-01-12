@@ -17,6 +17,7 @@ def sigint_handler() -> None:
     sys.stderr.write(f"\nCaught SIGINT. Exit CRISPRitz\n")
     sys.exit(os.EX_OSERR)  # mark as os error code
 
+
 def exception_handler(
     exception_type: type,
     exception: str,
