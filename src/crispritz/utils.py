@@ -65,3 +65,7 @@ def create_folder(folder: str) -> str:
 
 def find_fasta_index(fasta_path: str) -> bool:
     return os.path.isfile(f"{fasta_path}.fai")
+
+
+def find_tabix_index(fname_path: str) -> bool:
+    return os.path.isfile(f"{fname_path}.tbi")

@@ -2,12 +2,8 @@
 
 from .crispritz_error import GenomeReaderError, GenomeWriterError
 from .exception_handlers import exception_handler
-from .utils import find_fasta_index
 
-from itertools import groupby
-from pysam import faidx, FastaFile
-from typing import Tuple, List, Optional
-from pathlib import Path
+from typing import List, Optional
 
 import os
 
@@ -97,13 +93,29 @@ class GenomeReader:
                 e,
             )
 
+    def insert_snp(self, iupac_nt: str, pos: int) -> None:
+        if self._sequence is None:
+            exception_handler(
+                GenomeReaderError,
+                "Sequence not initialized, impossible to insert SNPs",
+                os.EX_DATAERR,
+                self._debug,
+            )
+        self._sequence[pos] = iupac_nt  # add snp as iupac to sequence
+
     @property
-    def header(self) -> Optional[str]:
+    def header(self) -> str:
+        assert self._header  # if used, always initialized
         return self._header
 
     @property
-    def sequence(self) -> Optional[List[str]]:
+    def sequence(self) -> List[str]:
+        assert self._sequence  # if used, always initialized
         return self._sequence
+
+    @property
+    def fname(self) -> str:
+        return self._fasta_path
 
 
 class GenomeWriter:
