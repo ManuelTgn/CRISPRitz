@@ -243,6 +243,10 @@ class CrispritzEnrichmentInputArgs:
         return self._fastas
 
     @property
+    def indels(self) -> bool:
+        return self._args.indels
+
+    @property
     def outdir(self) -> str:
         return self._args.outdir
 

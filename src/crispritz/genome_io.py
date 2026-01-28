@@ -4,8 +4,19 @@ from .crispritz_error import GenomeReaderError, GenomeWriterError
 from .exception_handlers import exception_handler
 
 from typing import List, Optional
+from dataclasses import dataclass
 
 import os
+
+
+# define indel upstream and downstream offset
+INDELOFFSET = 26
+
+
+@dataclass
+class IndelPair:
+    refseq: List[str]
+    indelseq: List[str]
 
 
 class GenomeReader:
@@ -14,6 +25,7 @@ class GenomeReader:
         self._debug = debug  # store debug flag
         self._fasta_path = fasta_path
         self._sequence: Optional[List[str]] = None
+        self._sequence_enr: Optional[List[str]] = None
         self._header: Optional[str] = None
 
     def __repr__(self) -> str:
@@ -61,6 +73,7 @@ class GenomeReader:
             )
         # join and convert to list of characters
         self._sequence = list("".join(sequence_lines).upper())
+        self._sequence_enr = list(self._sequence)
 
     def read(self) -> None:
         try:
@@ -94,14 +107,20 @@ class GenomeReader:
             )
 
     def insert_snp(self, iupac_nt: str, pos: int) -> None:
-        if self._sequence is None:
+        if self._sequence_enr is None:
             exception_handler(
                 GenomeReaderError,
                 "Sequence not initialized, impossible to insert SNPs",
                 os.EX_DATAERR,
                 self._debug,
             )
-        self._sequence[pos] = iupac_nt  # add snp as iupac to sequence
+        self._sequence_enr[pos] = iupac_nt  # add snp as iupac to sequence
+
+    def insert_indel(self, ref: str, indel: List[str], pos: int) -> IndelPair:
+        assert self._sequence
+        refseq = self._sequence[pos - INDELOFFSET : pos + INDELOFFSET + len(ref)]
+        indelseq = refseq[:INDELOFFSET] + indel + refseq[INDELOFFSET + len(ref) :]
+        return IndelPair(refseq=refseq, indelseq=indelseq)
 
     @property
     def header(self) -> str:
@@ -112,6 +131,11 @@ class GenomeReader:
     def sequence(self) -> List[str]:
         assert self._sequence  # if used, always initialized
         return self._sequence
+
+    @property
+    def sequence_enr(self) -> List[str]:
+        assert self._sequence_enr  # if used, always initialized
+        return self._sequence_enr
 
     @property
     def fname(self) -> str:
