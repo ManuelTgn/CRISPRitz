@@ -19,7 +19,7 @@ from .utils import TOOLNAME, SUBCOMMANDS
 from .crispritz_argparse import CrispritzArgumentParser, CrispritzEnrichmentInputArgs
 from .version import __version__
 from .exception_handlers import sigint_handler
-from .enricher import add_variants
+from .enrichment import add_variants_cli
 
 from argparse import _SubParsersAction
 from time import time
@@ -168,7 +168,7 @@ def main():
             parser.error_noargs()
         args = parser.parse_args(sys.argv[1:])  # parse input args
         if args.command == SUBCOMMANDS[0]:  # add-variants
-            add_variants(CrispritzEnrichmentInputArgs(args, parser))
+            add_variants_cli(CrispritzEnrichmentInputArgs(args, parser))
     except KeyboardInterrupt:
         sigint_handler()  # catch SIGINT and exit gracefully
     sys.stdout.write(f"{TOOLNAME} - Elapsed time {time() - start:.2f}s\n")

@@ -1,22 +1,17 @@
 """ """
 
-from .crispritz_error import GenomeReaderError, GenomeWriterError
-from .exception_handlers import exception_handler
+from ..crispritz_error import GenomeReaderError, GenomeWriterError
+from ..exception_handlers import exception_handler
+from .variants import IndelPair
 
 from typing import List, Optional
-from dataclasses import dataclass
 
 import os
 
 
 # define indel upstream and downstream offset
-INDELOFFSET = 26
+INDELOFFSET = 50
 
-
-@dataclass
-class IndelPair:
-    refseq: List[str]
-    indelseq: List[str]
 
 
 class GenomeReader:
@@ -116,10 +111,10 @@ class GenomeReader:
             )
         self._sequence_enr[pos] = iupac_nt  # add snp as iupac to sequence
 
-    def insert_indel(self, ref: str, indel: List[str], pos: int) -> IndelPair:
+    def insert_indel(self, indel: str, pos: int, offset: int) -> IndelPair:
         assert self._sequence
-        refseq = self._sequence[pos - INDELOFFSET : pos + INDELOFFSET + len(ref)]
-        indelseq = refseq[:INDELOFFSET] + indel + refseq[INDELOFFSET + len(ref) :]
+        refseq = self._sequence[pos - INDELOFFSET : pos + INDELOFFSET + offset]
+        indelseq = refseq[:INDELOFFSET] + list(indel) + refseq[INDELOFFSET + offset :]
         return IndelPair(refseq=refseq, indelseq=indelseq)
 
     @property
