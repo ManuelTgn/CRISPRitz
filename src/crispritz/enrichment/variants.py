@@ -3,6 +3,7 @@
 from typing import List, Iterator, Optional, Tuple
 from dataclasses import dataclass
 
+
 class Snp:
     """Represent a single SNP allele from a VCF record. This stores its genomic
     position, reference and alternate bases, and the genotype index pointing to
@@ -43,8 +44,8 @@ class Snp:
 
 
 class Snps:
-    """Collect multiple SNP alleles that originate from the same VCF record. 
-    This groups individual `Snp` objects and exposes convenience accessors over 
+    """Collect multiple SNP alleles that originate from the same VCF record.
+    This groups individual `Snp` objects and exposes convenience accessors over
     the set.
 
     The container behaves like a lightweight sequence with iteration, truthiness,
@@ -140,15 +141,15 @@ class Indel:
 
 
 class Indels:
-    """Collect multiple indel alleles that originate from the same VCF record. 
-    This groups individual `Indel` objects and provides helpers to access shared 
+    """Collect multiple indel alleles that originate from the same VCF record.
+    This groups individual `Indel` objects and provides helpers to access shared
     coordinates and filter alleles.
 
     The container behaves like a lightweight sequence with iteration, truthiness
     and convenience methods for retrieving positions, reference bases and
     non-symbolic subsets of the stored indels.
     """
-    
+
     def __init__(self, items: Optional[List[Indel]] = None) -> None:
         self._items: List[Indel] = items if items is not None else []
 
@@ -189,7 +190,7 @@ class Indels:
 
     def non_symbolic(self) -> "Indels":
         return Indels([i for i in self._items if not i.is_symbolic()])
-    
+
 
 @dataclass
 class IndelInfo:
@@ -197,11 +198,12 @@ class IndelInfo:
     start: int
     stop: int
 
+
 @dataclass
 class IndelPair:
     refseq: List[str]
     indelseq: List[str]
-    
+
 
 class IndelsSet:
 
@@ -227,5 +229,3 @@ class IndelsSet:
     @property
     def sequences(self) -> List[List[str]]:
         return self._indel_seqs
-
-

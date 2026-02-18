@@ -247,6 +247,10 @@ class CrispritzEnrichmentInputArgs:
         return self._args.indels
 
     @property
+    def store_dictionary(self) -> bool:
+        return self._args.store_dictionary
+
+    @property
     def outdir(self) -> str:
         return self._args.outdir
 

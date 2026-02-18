@@ -69,3 +69,7 @@ def find_fasta_index(fasta_path: str) -> bool:
 
 def find_tabix_index(fname_path: str) -> bool:
     return os.path.isfile(f"{fname_path}.tbi")
+
+
+def set_processes(tasks_n: int, threads: int) -> int:
+    return min(tasks_n, threads)

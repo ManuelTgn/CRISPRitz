@@ -13,7 +13,6 @@ import os
 INDELOFFSET = 50
 
 
-
 class GenomeReader:
 
     def __init__(self, fasta_path: str, debug: bool):
