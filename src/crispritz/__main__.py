@@ -122,6 +122,15 @@ def create_enrichment_parser(subparser: _SubParsersAction) -> _SubParsersAction:
         "sequence individually (default: disabled)",
     )
     optional_group.add_argument(
+        "--keep",
+        action="store_true",
+        dest="keep",
+        default=False,
+        help="Include all variants during genome enrichment, regardless of their "
+        "FILTER status. By default, only variants with FILTER=PASS are included "
+        "(default: disabled)",
+    )
+    optional_group.add_argument(
         "--outdir",
         type=str,
         metavar="OUTDIR",

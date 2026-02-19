@@ -42,11 +42,12 @@ def _retrieve_contig_name(fasta: FastaFile, debug: bool) -> str:
     raises an error otherwise, and returns the standardized contig identifier.
 
     Args:
-        fasta: An open pysam.FastaFile object from which to read contig names.
-        debug: Flag indicating whether to use debug-aware error handling.
+        fasta (FastaFile): An open pysam.FastaFile object from which to read
+            contig names.
+        debug (bool): Flag indicating whether to use debug-aware error handling.
 
     Returns:
-        The normalized contig name extracted from the FASTA file.
+        str: The normalized contig name extracted from the FASTA file.
     """
     if len(fasta.references) != 1:  # assumes each fasta is chromosome separated
         contigs = ", ".join(fasta.references)
@@ -61,7 +62,7 @@ def _retrieve_contig_name(fasta: FastaFile, debug: bool) -> str:
     return contig if contig.startswith("chr") else f"chr{contig}"
 
 
-def retrieve_contig_names(
+def _retrieve_contig_names(
     fasta_files: List[str], verbosity: int, debug: bool
 ) -> Set[str]:
     """Retrieve standardized contig names from a list of FASTA files. Each FASTA
@@ -72,12 +73,13 @@ def retrieve_contig_names(
     unique contig identifiers found.
 
     Args:
-        fasta_files: List of paths to FASTA files representing genome contigs.
-        verbosity: Verbosity level controlling printed progress information.
-        debug: Flag indicating whether to use debug-aware error handling.
+        fasta_files (List[str]): List of paths to FASTA files representing
+            genome contigs.
+        verbosity (int): Verbosity level controlling printed progress information.
+        debug (bool): Flag indicating whether to use debug-aware error handling.
 
     Returns:
-        A set of normalized contig names extracted from the FASTA files.
+        Set[str]: A set of normalized contig names extracted from the FASTA files.
     """
     # retrieve contig names for each fasta file in genome folder
     print_verbosity(
@@ -88,7 +90,7 @@ def retrieve_contig_names(
     return {_retrieve_contig_name(FastaFile(f), debug) for f in fasta_files}
 
 
-def initialize_fasta(
+def _initialize_fasta(
     fasta_vcf_map: Dict[str, EnrichPair], fasta_files: List[str], debug: bool
 ) -> Dict[str, EnrichPair]:
     """Populate the FASTA entries of a contig-to-file mapping. This associates each
@@ -99,13 +101,13 @@ def initialize_fasta(
     path in the mapping.
 
     Args:
-        fasta_vcf_map: Dictionary mapping contig names to `EnrichPair` objects
-            to be updated with FASTA paths.
-        fasta_files: List of FASTA file paths to register in the mapping.
-        debug: Flag indicating whether to use debug-aware error handling.
+        fasta_vcf_map (Dict[str,EnrichPair]): Dictionary mapping contig names
+            to `EnrichPair` objects to be updated with FASTA paths.
+        fasta_files (List[str]): List of FASTA file paths to register in the mapping.
+        debug (bool): Flag indicating whether to use debug-aware error handling.
 
     Returns:
-        The updated contig-to-file mapping including the assigned FASTA paths.
+        Dict[str,EnrichPair]: The updated contig-to-file mapping including the assigned FASTA paths.
     """
     for f in fasta_files:
         contig = FastaFile(f).references[0]  # retrieve contig name
@@ -132,12 +134,9 @@ def _tabix_index(vcf_fname: str, verbosity: int, debug: bool) -> None:
     debug-aware error handling to report failures.
 
     Args:
-        vcf_fname: Path to the VCF file to be indexed.
-        verbosity: Verbosity level controlling printed progress information.
-        debug: Flag indicating whether to use debug-aware error handling.
-
-    Returns:
-        None
+        vcf_fname (str): Path to the VCF file to be indexed.
+        verbosity (int): Verbosity level controlling printed progress information.
+        debug (bool): Flag indicating whether to use debug-aware error handling.
     """
     if find_tabix_index(vcf_fname):  # index found, do nothing
         return
@@ -166,11 +165,12 @@ def _retrieve_contig_vcf(vcf: VariantFile, debug: bool) -> str:
     identifier.
 
     Args:
-        vcf: An open pysam.VariantFile object from which to read contig names.
-        debug: Flag indicating whether to use debug-aware error handling.
+        vcf (VariantFile): An open pysam.VariantFile object from which to read
+            contig names.
+        debug (bool): Flag indicating whether to use debug-aware error handling.
 
     Returns:
-        The normalized contig name extracted from the VCF header.
+        str: The normalized contig name extracted from the VCF header.
     """
     contigs = list(map(str, vcf.header.contigs))  # get contig names in vcf
     if len(contigs) != 1:
@@ -186,7 +186,7 @@ def _retrieve_contig_vcf(vcf: VariantFile, debug: bool) -> str:
     return contig if contig.startswith("chr") else f"chr{contig}"
 
 
-def initialize_vcf(
+def _initialize_vcf(
     fasta_vcf_map: Dict[str, EnrichPair],
     vcf_files: List[str],
     verbosity: int,
@@ -200,14 +200,15 @@ def initialize_vcf(
     path in the mapping.
 
     Args:
-        fasta_vcf_map: Dictionary mapping contig names to `EnrichPair` objects
-            to be updated with VCF paths.
-        vcf_files: List of VCF file paths to register in the mapping.
-        verbosity: Verbosity level controlling printed progress information.
-        debug: Flag indicating whether to use debug-aware error handling.
+        fasta_vcf_map (Dict[str, EnrichPair]): Dictionary mapping contig names to
+            `EnrichPair` objects to be updated with VCF paths.
+        vcf_files (List[str]): List of VCF file paths to register in the mapping.
+        verbosity (int): Verbosity level controlling printed progress information.
+        debug (bool): Flag indicating whether to use debug-aware error handling.
 
     Returns:
-        The updated contig-to-file mapping including the assigned VCF paths.
+        Dict[str,EnrichPair]: The updated contig-to-file mapping including the
+            assigned VCF paths.
     """
     for f in vcf_files:
         # retrieve vcf contig
@@ -226,7 +227,7 @@ def initialize_vcf(
     return fasta_vcf_map
 
 
-def construct_fasta_vcf_map(
+def _construct_fasta_vcf_map(
     fasta_files: List[str], vcf_files: List[str], verbosity: int, debug: bool
 ) -> Dict[str, EnrichPair]:
     """Build a mapping between contig names and their FASTA/VCF file pairs. This
@@ -237,28 +238,28 @@ def construct_fasta_vcf_map(
     and VCF paths.
 
     Args:
-        fasta_files: List of FASTA file paths representing contig sequences.
-        vcf_files: List of VCF file paths providing variant calls per contig.
-        verbosity: Verbosity level controlling printed progress information.
-        debug: Flag indicating whether to use debug-aware error handling.
+        fasta_files (List[str]): List of FASTA file paths representing contig sequences.
+        vcf_files (List[str]): List of VCF file paths providing variant calls per contig.
+        verbosity (int): Verbosity level controlling printed progress information.
+        debug (bool): Flag indicating whether to use debug-aware error handling.
 
     Returns:
-        A dictionary mapping normalized contig names to their associated
-        `EnrichPair` instances.
+        Dict[str,EnrichPair]: A dictionary mapping normalized contig names to
+            their associated `EnrichPair` instances.
     """
     # retrieve contig names in fasta from genome folder and initialize map
     fasta_vcf_map = {
         contig: EnrichPair(debug)
-        for contig in retrieve_contig_names(fasta_files, verbosity, debug)
+        for contig in _retrieve_contig_names(fasta_files, verbosity, debug)
     }
     # initialize fasta elements in the map
-    fasta_vcf_map = initialize_fasta(fasta_vcf_map, fasta_files, debug)
+    fasta_vcf_map = _initialize_fasta(fasta_vcf_map, fasta_files, debug)
     # initialize vcf elements in the map
-    fasta_vcf_map = initialize_vcf(fasta_vcf_map, vcf_files, verbosity, debug)
+    fasta_vcf_map = _initialize_vcf(fasta_vcf_map, vcf_files, verbosity, debug)
     return fasta_vcf_map
 
 
-def split_contigs(
+def _split_contigs(
     fasta_vcf_map: Dict[str, EnrichPair], verbosity: int
 ) -> Tuple[List[str], List[str]]:
     """Split contigs into those with and without associated VCF files. This helps
@@ -269,13 +270,13 @@ def split_contigs(
     resulting contig lists.
 
     Args:
-        fasta_vcf_map: Mapping from contig names to `EnrichPair` objects
-            containing FASTA and VCF file associations.
-        verbosity: Verbosity level controlling printed progress information.
+        fasta_vcf_map (Dict[str, EnrichPair]): Mapping from contig names to
+            `EnrichPair` objects containing FASTA and VCF file associations.
+        verbosity (int): Verbosity level controlling printed progress information.
 
     Returns:
-        A tuple containing a list of contigs with VCFs and a list of contigs
-        without VCFs.
+        Tuple[List[str],List[str]]: A tuple containing a list of contigs with VCFs
+            and a list of contigs without VCFs.
     """
     # divide contigs with variants from those without for different processing
     print_verbosity(
@@ -291,7 +292,7 @@ def split_contigs(
     return contigs_vcf, contigs_wo_vcf
 
 
-def prepare_output_dir(outdir: str) -> Tuple[str, str]:
+def _prepare_output_dir(outdir: str) -> Tuple[str, str]:
     """Prepare the output directory structure for enrichment results. This ensures
     separate subfolders exist for SNP and INDEL enriched genomes.
 
@@ -299,11 +300,11 @@ def prepare_output_dir(outdir: str) -> Tuple[str, str]:
     given root directory and returns their paths.
 
     Args:
-        outdir: Root output directory where variant genome subfolders are created.
+        outdir (str): Root output directory where variant genome subfolders are created.
 
     Returns:
-        A tuple containing the SNP output directory path and the INDEL output
-        directory path, in that order.
+        Tuple[str,str]: A tuple containing the SNP output directory path and the
+            INDEL output directory path, in that order.
     """
     # create snps and indels out directory
     return create_folder(os.path.join(outdir, SNPDIR)), create_folder(
@@ -311,7 +312,7 @@ def prepare_output_dir(outdir: str) -> Tuple[str, str]:
     )
 
 
-def enrich_no_variants(
+def _enrich_no_variants(
     fasta_vcf_map: Dict[str, EnrichPair],
     contigs: List[str],
     outdir: str,
@@ -326,15 +327,13 @@ def enrich_no_variants(
     progress.
 
     Args:
-        fasta_vcf_map: Mapping from contig names to `EnrichPair` objects containing
-            FASTA paths and optional VCF paths.
-        contigs: List of contig names to process that have no associated VCF files.
-        outdir: Directory where enriched FASTA files will be written.
-        verbosity: Verbosity level controlling printed progress information.
-        debug: Flag indicating whether to use debug-aware error handling.
-
-    Returns:
-        None
+        fasta_vcf_map (Dict[str, EnrichPair]): Mapping from contig names to
+            `EnrichPair` objects containing FASTA paths and optional VCF paths.
+        contigs (List[str]): List of contig names to process that have no associated
+            VCF files.
+        outdir (str): Directory where enriched FASTA files will be written.
+        verbosity (int): Verbosity level controlling printed progress information.
+        debug (bool): Flag indicating whether to use debug-aware error handling.
     """
     for contig in contigs:  # just copy fasta without variants for enrichment
         print_verbosity(f"Enriching contig {contig}", verbosity, VERBOSITYLVL[3])
@@ -362,12 +361,12 @@ def _extract_samples(vcf_header: List[str], vcf_fname: str, debug: bool) -> List
     debug-aware error if extraction fails.
 
     Args:
-        vcf_header: List of header fields from the '#CHROM' VCF header line.
-        vcf_fname: Path to the VCF file being parsed, used for error reporting.
-        debug: Flag indicating whether to use debug-aware error handling.
+        vcf_header (List[str]): List of header fields from the '#CHROM' VCF header line.
+        vcf_fname (str): Path to the VCF file being parsed, used for error reporting.
+        debug (bool): Flag indicating whether to use debug-aware error handling.
 
     Returns:
-        A list of sample names defined in the VCF header.
+        List[str]: A list of sample names defined in the VCF header.
     """
     try:
         return vcf_header[9:]
@@ -381,7 +380,7 @@ def _extract_samples(vcf_header: List[str], vcf_fname: str, debug: bool) -> List
         )
 
 
-def retrieve_samples(vcfin: TextIOWrapper, vcf_fname: str, debug: bool) -> List[str]:
+def _retrieve_samples(vcfin: TextIOWrapper, vcf_fname: str, debug: bool) -> List[str]:
     """Read a VCF stream and extract the list of sample names. This scans header
     lines until the '#CHROM' line is found and then parses its fields.
 
@@ -389,12 +388,13 @@ def retrieve_samples(vcfin: TextIOWrapper, vcf_fname: str, debug: bool) -> List[
     and raises a debug-aware error if the header cannot be located.
 
     Args:
-        vcfin: Open text stream for the VCF file, positioned at the start.
-        vcf_fname: Path to the VCF file being parsed, used for error reporting.
-        debug: Flag indicating whether to use debug-aware error handling.
+        vcfin (TextIOWrapper
+            the start.
+        vcf_fname (str): Path to the VCF file being parsed, used for error reporting.
+        debug (bool): Flag indicating whether to use debug-aware error handling.
 
     Returns:
-        A list of sample names defined in the VCF header.
+        List[strA:  list of sample names defined in the VCF header.
     """
     for line in vcfin:  # parse VCF header
         if "#CHROM" in line:  # end of header reached
@@ -412,20 +412,22 @@ def retrieve_samples(vcfin: TextIOWrapper, vcf_fname: str, debug: bool) -> List[
     )
 
 
-def _skip_variant(variant_filter: str) -> bool:
-    """Decide whether a VCF variant should be skipped based on its FILTER field.
-    This treats only 'PASS' variants as eligible for enrichment.
+def _skip_variant(variant_filter: str, keep: bool) -> bool:
+    """Decide whether a variant should be skipped based on its FILTER status.
+    This encapsulates the logic for retaining or discarding non-PASS records.
 
-    The function returns True for filtered-out variants and False for variants
-    that passed quality control.
+    The function respects a global keep flag that forces retention of all
+    variants, otherwise it skips those whose FILTER value differs from 'PASS'.
 
     Args:
-        variant_filter: The FILTER column value from a VCF record.
+        variant_filter (str): FILTER field value from the VCF record.
+        keep (bool): Flag indicating whether to keep all variants regardless of
+            their FILTER status.
 
     Returns:
-        True if the variant should be skipped, False if it should be processed.
+        bool: True if the variant should be skipped, False otherwise.
     """
-    return variant_filter != "PASS"
+    return False if keep else variant_filter != "PASS"
 
 
 def _extract_af_idx(info: str, debug: bool) -> int:
@@ -436,12 +438,12 @@ def _extract_af_idx(info: str, debug: bool) -> int:
     entry starting with 'AF', and raises an error if no such entry is found.
 
     Args:
-        info: The INFO column string from a VCF record.
-        debug: Flag indicating whether to use debug-aware error handling.
+        info (str): The INFO column string from a VCF record.
+        debug (bool): Flag indicating whether to use debug-aware error handling.
 
     Returns:
-        The zero-based index of the AF entry within the semicolon-separated INFO
-            fields.
+        int: The zero-based index of the AF entry within the semicolon-separated
+            INFO fields.
     """
     for i, e in enumerate(info.split(";")):  # look in INFO field
         if e[:2] == "AF":
@@ -460,13 +462,13 @@ def _split_snps_indels(pos: int, ref: str, alts: str) -> Tuple[Snps, Indels]:
     records their shared position and per-allele genotype index.
 
     Args:
-        pos: Zero-based genomic position of the variant.
-        ref: Reference allele sequence from the VCF record.
-        alts: Comma-separated string of alternate alleles from the VCF record.
+        pos (int): Zero-based genomic position of the variant.
+        ref (str): Reference allele sequence from the VCF record.
+        alts (str): Comma-separated string of alternate alleles from the VCF record.
 
     Returns:
-        A tuple containing a `Snps` collection and an `Indels` collection built
-        from the provided alleles.
+        Tuple[Snps,Indels]: A tuple containing a `Snps` collection and an `Indels`
+            collection built from the provided alleles.
     """
     # retrieve reference, snps and indels for current variant
     snps, indels = Snps(), Indels()  # snps and indels containers
@@ -486,13 +488,13 @@ def _compute_vid(chrom: str, pos: Union[int, str], ref: str, alt: str) -> str:
     components into a single 'chr-pos-ref/alt' label.
 
     Args:
-        chrom: Chromosome name from the variant record.
-        pos: Genomic position of the variant, either as int or string.
-        ref: Reference allele sequence.
-        alt: Alternate allele sequence.
+        chrom (str): Chromosome name from the variant record.
+        pos (int): Genomic position of the variant, either as int or string.
+        ref (str): Reference allele sequence.
+        alt (str): Alternate allele sequence.
 
     Returns:
-        A variant identifier string of the form 'chrX-pos-ref/alt'.
+        str: A variant identifier string of the form 'chrX-pos-ref/alt'.
     """
     chrom = chrom if chrom.startswith("chr") else f"chr{chrom}"
     return f"{chrom}-{pos}-{ref}/{alt}"
@@ -509,14 +511,14 @@ def _retrieve_carriers(
     'sample:genotype' labels depending on the indels flag.
 
     Args:
-        genotypes: List of genotype strings (e.g. '0/1:...') for each sample.
-        samples: List of sample names aligned with the genotype list.
-        gtidx: Genotype index (as a string) that identifies the allele of interest.
-        indels: Flag indicating whether to omit genotype strings from the output.
+        genotypes (List[str]): List of genotype strings (e.g. '0/1:...') for each sample.
+        samples (List[str]): List of sample names aligned with the genotype list.
+        gtidx (str): Genotype index (as a string) that identifies the allele of interest.
+        indels (bool): Flag indicating whether to omit genotype strings from the output.
 
     Returns:
-        A comma-separated string of carrier labels, or an empty string if no
-        carriers are found.
+        str: A comma-separated string of carrier labels, or an empty string if no
+            carriers are found.
     """
     if indels:  # do not report genotype associated to samples
         carriers = [
@@ -541,13 +543,13 @@ def _retrieve_af(info: str, idx: int, gtidx: int) -> str:
     prefix, and returns the value corresponding to the requested genotype index.
 
     Args:
-        info: The INFO column string from a VCF record.
-        idx: Zero-based index of the AF entry within the semicolon-separated INFO
-            fields.
-        gtidx: One-based genotype index pointing to the target alternate allele.
+        info (str): The INFO column string from a VCF record.
+        idx (int): Zero-based index of the AF entry within the semicolon-separated
+            INFO fields.
+        gtidx (int): One-based genotype index pointing to the target alternate allele.
 
     Returns:
-        The allele-frequency string for the specified alternate allele.
+        str: The allele-frequency string for the specified alternate allele.
     """
     return info.split(";")[idx][3:].split(",")[gtidx - 1]
 
@@ -560,11 +562,11 @@ def _create_snp_dict_entry(carriers: str, alleles: str, vid: str, af: str) -> st
     always includes alleles, variant ID and AF separated by semicolons.
 
     Args:
-        carriers: Comma-separated 'sample:genotype' labels for carrier samples,
+        carriers (str): Comma-separated 'sample:genotype' labels for carrier samples,
             or an empty string.
-        alleles: Reference and alternate alleles encoded as 'REF,ALT'.
-        vid: Stable variant identifier string (e.g. from `_compute_vid`).
-        af: Allele-frequency value for the SNP.
+        alleles (str): Reference and alternate alleles encoded as 'REF,ALT'.
+        vid (str): Stable variant identifier string (e.g. from `_compute_vid`).
+        af (str): Allele-frequency value for the SNP.
 
     Returns:
         A semicolon-delimited string representing the SNP dictionary entry.
@@ -575,7 +577,7 @@ def _create_snp_dict_entry(carriers: str, alleles: str, vid: str, af: str) -> st
 
 
 def insert_snp_in_dict(
-    chrom_snps_dict: Dict,
+    chrom_snps_dict: Dict[str, str],
     contig: str,
     info: str,
     genotypes: List[str],
@@ -592,19 +594,21 @@ def insert_snp_in_dict(
     share the same position, and updates the dictionary in place.
 
     Args:
-        chrom_snps_dict: Dictionary storing SNP annotations keyed by 'contig,pos'.
-        contig: Normalized contig name for the SNPs being recorded.
-        info: INFO column string from the VCF record supplying allele-frequency
+        chrom_snps_dict (Dict[str, str]): Dictionary storing SNP annotations
+            keyed by 'contig,pos'.
+        contig (str): Normalized contig name for the SNPs being recorded.
+        info (str): INFO column string from the VCF record supplying allele-frequency
             values.
-        genotypes: List of genotype strings for all samples at this record.
-        samples: List of sample names aligned with the genotype list.
-        afidx: Zero-based index of the AF entry within the semicolon-separated
+        genotypes (List[str]): List of genotype strings for all samples at this record.
+        samples (List[str]): List of sample names aligned with the genotype list.
+        afidx (int): Zero-based index of the AF entry within the semicolon-separated
             INFO fields.
-        snps: Collection of `Snp` objects representing all SNP alleles at this
+        snps (Snps): Collection of `Snp` objects representing all SNP alleles at this
             position.
 
     Returns:
-        The updated chromosome SNP dictionary containing the new position entry.
+        Dict[str,str]: The updated chromosome SNP dictionary containing the new
+            position entry.
     """
     snpkey = f"{contig},{snps.pos()}"  # retrieve snp key
     # compute dictionary entry for each snp (multiallelic sites)
@@ -641,22 +645,25 @@ def _process_snp(
     sequence, and delegates SNP dictionary insertion when requested.
 
     Args:
-        variant: Full list of VCF fields for the current record.
-        snps: Collection of `Snp` objects representing all SNP alleles at this
-            position.
-        contig: Normalized contig name for the current record.
-        reader: GenomeReader instance holding the contig sequence to be enriched.
-        chrom_snps_dict: Dictionary storing SNP annotations keyed by 'contig,pos'.
-        samples: List of sample names aligned with genotype fields in the VCF record.
-        afidx: Zero-based index of the AF entry within the semicolon-separated
+        variant List[str]: Full list of VCF fields for the current record.
+        snps (Snps): Collection of `Snp` objects representing all SNP alleles at
+            this position.
+        contig (str): Normalized contig name for the current record.
+        reader (GenomeReader): GenomeReader instance holding the contig sequence
+            to be enriched.
+        chrom_snps_dict (Dict[str, str]): Dictionary storing SNP annotations
+            keyed by 'contig,pos'.
+        samples (List[str]): List of sample names aligned with genotype fields in
+            the VCF record.
+        afidx (int): Zero-based index of the AF entry within the semicolon-separated
             INFO fields.
-        store_dictionary: Flag indicating whether SNP metadata should be stored
+        store_dictionary (bool): Flag indicating whether SNP metadata should be stored
             in the dictionary.
-        debug: Flag indicating whether to use debug-aware error handling.
+        debug (bool): Flag indicating whether to use debug-aware error handling.
 
     Returns:
-        The updated chromosome SNP dictionary, potentially with a new entry for
-            this position.
+        Dict[str,str]: The updated chromosome SNP dictionary, potentially with a
+            new entry for this position.
     """
     # retrieve ref allele from contig sequence
     pos = snps.pos()  # snp position
@@ -693,14 +700,15 @@ def _initialize_samples_dict_indels(
     sequence.
 
     Args:
-        indels: Collection of `Indels` objects representing all indel alleles at
-            a position.
-        genotypes: List of genotype strings for all samples at the current record.
-        samples: List of sample names aligned with the genotype list.
+        indels (Indels): Collection of `Indels` objects representing all indel
+            alleles at a position.
+        genotypes (List[str]): List of genotype strings for all samples at the
+            current record.
+        samples (List[str]): List of sample names aligned with the genotype list.
 
     Returns:
-        A dictionary mapping each indel ALT sequence to a comma-separated string
-        of 'sample:genotype' carrier labels.
+        Dict[str,str]: A dictionary mapping each indel ALT sequence to a comma-separated
+            string of 'sample:genotype' carrier labels.
     """
     samples_dict: Dict[str, str] = {indel.alt: "" for indel in indels.items}
     for indel in indels.items:
@@ -722,15 +730,18 @@ def _insert_indel(
     returns both the sequence pair and its assigned metadata.
 
     Args:
-        reader: GenomeReader instance holding the contig sequence to be enriched.
-        indel: Alternate indel sequence to be inserted.
-        pos: Zero-based genomic position at which the indel is anchored.
-        offset: Length of the reference allele being replaced.
-        indels_set: IndelsSet collection that tracks all inserted indel sequences.
+        reader (GenomeReader): GenomeReader instance holding the contig sequence t
+            o be enriched.
+        indel (str): Alternate indel sequence to be inserted.
+        pos (int): Zero-based genomic position at which the indel is anchored.
+        offset (int): Length of the reference allele being replaced.
+        indels_set (IndelsSet): IndelsSet collection that tracks all inserted
+            indel sequences.
 
     Returns:
-        A tuple containing the `IndelPair` with reference and indel sequences,
-        and the `IndelInfo` describing the indel's synthetic coordinates.
+        Tuple[IndelPair,IndelInfo]: A tuple containing the `IndelPair` with reference
+            and indel sequences, and the `IndelInfo` describing the indel's synthetic
+            coordinates.
     """
     # insert indel in reference sequence
     indel_pair = reader.insert_indel(indel, pos, offset)
@@ -748,11 +759,12 @@ def _compute_indel_coordinates(ref: str, pos: int) -> Tuple[int, int]:
     the stop coordinate.
 
     Args:
-        ref: Reference allele sequence for the indel.
-        pos: Zero-based genomic position at which the indel is anchored.
+        ref (str): Reference allele sequence for the indel.
+        pos (int): Zero-based genomic position at which the indel is anchored.
 
     Returns:
-        A tuple containing the start and stop coordinates of the flanking window.
+        Tuple[int,int]: A tuple containing the start and stop coordinates of the
+            flanking window.
     """
     # compute start/stop coordinates for indel
     start = pos - INDELOFFSET
@@ -779,20 +791,23 @@ def insert_indel_in_dict(
     appends a tab-ready row describing the indel to the log list.
 
     Args:
-        logindels: Accumulated list of indel log rows to be written later.
-        contig: Normalized contig name on which the indel is located.
-        info: INFO column string from the VCF record supplying allele-frequency
+        logindels (List[List[str]]): Accumulated list of indel log rows to be
+            written later.
+        contig (str): Normalized contig name on which the indel is located.
+        info (str): INFO column string from the VCF record supplying allele-frequency
             values.
-        indel: `Indel` object describing the variant allele and its position.
-        indel_info: `IndelInfo` describing the synthetic coordinates and index of
-            the inserted sequence.
-        indel_pair: `IndelPair` containing reference and indel-flanked sequences.
-        samples: Comma-separated 'sample:genotype' labels for carriers of this indel.
-        afidx: Zero-based index of the AF entry within the semicolon-separated
+        indel (Indel): `Indel` object describing the variant allele and its position.
+        indel_info (IndelInfo): `IndelInfo` describing the synthetic coordinates
+            and index of the inserted sequence.
+        indel_pair (IndelPair): `IndelPair` containing reference and indel-flanked
+            sequences.
+        samples (str): Comma-separated 'sample:genotype' labels for carriers of
+            this indel.
+        afidx (int): Zero-based index of the AF entry within the semicolon-separated
             INFO fields.
 
     Returns:
-        The updated list of indel log rows including the new entry.
+        List[List[str]]: The updated list of indel log rows including the new entry.
     """
     # compute indel desc and extended id
     indel_desc = f"{contig}_{indel.pos}_{indel.ref}_{indel.alt}"
@@ -838,24 +853,26 @@ def _process_indel(
     when requested, appends descriptive rows to the indel log.
 
     Args:
-        variant: Full list of VCF fields for the current record.
-        indels: Collection of `Indels` objects representing all indel alleles at
-            this position.
-        contig: Normalized contig name for the current record.
-        reader: GenomeReader instance holding the contig sequence to be enriched.
-        indels_set: IndelsSet collection tracking all inserted indel sequences for
-            the contig.
-        logindels: Accumulated list of indel log rows to be written later.
-        samples: List of sample names aligned with genotype fields in the VCF record.
-        afidx: Zero-based index of the AF entry within the semicolon-separated
+        variant (List[str]): Full list of VCF fields for the current record.
+        indels (Indels): Collection of `Indels` objects representing all indel
+            alleles at this position.
+        contig (str): Normalized contig name for the current record.
+        reader (GenomeReader): GenomeReader instance holding the contig sequence
+            to be enriched.
+        indels_set (IndelsSet): IndelsSet collection tracking all inserted indel
+            sequences for the contig.
+        logindels (list[List[str]]): Accumulated list of indel log rows to be written later.
+        samples (List[str]): List of sample names aligned with genotype fields in
+            the VCF record.
+        afidx (int): Zero-based index of the AF entry within the semicolon-separated
             INFO fields.
-        store_dictionary: Flag indicating whether indel metadata should be stored
+        store_dictionary (bool): Flag indicating whether indel metadata should be stored
             in the log list.
-        debug: Flag indicating whether to use debug-aware error handling.
+        debug (bool): Flag indicating whether to use debug-aware error handling.
 
     Returns:
-        A tuple containing the updated `IndelsSet` and the updated list of indel
-            log rows.
+        Tuple[IndelsSet,List[List[str]]]: A tuple containing the updated `IndelsSet`
+            and the updated list of indel log rows.
     """
     # retrieve ref allele from contig sequence
     pos = indels.pos()  # indel position
@@ -869,8 +886,6 @@ def _process_indel(
             os.EX_DATAERR,
             debug,
         )
-    # TODO: no 1:1 comparison with old (shift be -1 bp)
-    # TODO: remove genotyping from samples in log
     # initialize samples dictionary for indels
     samples_dict = _initialize_samples_dict_indels(indels, variant[9:], samples)
     for indel in indels.items:
@@ -893,41 +908,49 @@ def _process_indel(
     return indels_set, logindels
 
 
-def insert_variants(
+def _insert_variants(
     vcfin: TextIOWrapper,
     reader: GenomeReader,
     samples: List[str],
     contig: str,
+    keep: bool,
     indels_analysis: bool,
     chrom_snps_dict: Dict[str, str],
     logindels: List[List[str]],
     store_dictionary: bool,
     debug: bool,
 ) -> Tuple[Dict[str, str], IndelsSet, List[List[str]]]:
-    """Parse a VCF stream and insert all supported variants into a contig sequence.
-    This coordinates SNP enrichment, optional indel processing and dictionary/log
-    construction for a single contig.
+    """Stream all variants from a VCF handle and insert them into a contig sequence.
+    This coordinates SNP and optional indel handling while maintaining per-contig
+    dictionaries and logs.
 
-    The function walks over VCF records, filters by quality, classifies alleles
-    into SNPs and indels, updates the in-memory enriched sequence, and returns
-    both SNP dictionaries and indel tracking structures for downstream output.
+    The function iterates over VCF records, applies optional FILTER-based skipping,
+    lazily discovers the AF field index, dispatches SNPs and indels to their
+    respective processors, and returns the updated SNP dictionary, indel set and
+    indel log.
 
     Args:
-        vcfin: Open text stream for the VCF file, positioned at the first record.
-        reader: GenomeReader instance holding the contig sequence to be enriched.
-        samples: List of sample names defined in the VCF header.
-        contig: Normalized contig name being enriched.
-        indels_analysis: Flag indicating whether indel variants should be processed
-            in addition to SNPs.
-        chrom_snps_dict: Dictionary storing SNP annotations keyed by 'contig,pos'.
-        logindels: Accumulated list of indel log rows to be written later.
-        store_dictionary: Flag indicating whether SNP/indel metadata structures
-            should be populated.
-        debug: Flag indicating whether to use debug-aware error handling.
+        vcfin (TextIOWrapper): Open, text-mode VCF file handle positioned at the
+            first variant record.
+        reader (GenomeReader): GenomeReader instance holding the contig sequence to
+            be enriched.
+        samples (List[str]): List of sample names aligned with genotype fields in
+            the VCF records.
+        contig (str): Normalized contig name associated with the VCF records.
+        keep (bool): Flag indicating whether to keep all variants (True) or skip
+            non-PASS variants based on the FILTER field (False).
+        indels_analysis (bool): Flag indicating whether indel variants should be
+            processed in addition to SNPs.
+        chrom_snps_dict (Dict[str,str]): Dictionary storing SNP annotations keyed by
+            'contig,pos' that will be updated in place.
+        logindels (List[List[str]]): Accumulated list of indel log rows to be updated.
+        store_dictionary (bool): Flag indicating whether SNP and indel metadata
+            should be recorded into the dictionary and log structures.
+        debug (bool): Flag indicating whether to use debug-aware error handling.
 
     Returns:
-        A tuple containing the updated SNP dictionary, the populated `IndelsSet`
-        for this contig, and the updated list of indel log rows.
+        Tuple[Dict[str,str],IndelsSet,List[List[str]]]: A tuple containing the updated
+            SNP dictionary, the per-contig `IndelsSet`, and the updated indel log.
     """
     # initialize indel-specific variables (updated and only used for indels)
     indels_set = IndelsSet(debug)
@@ -935,7 +958,7 @@ def insert_variants(
     afidx = -1
     for line in vcfin:  # iterate over variants
         variant = line.strip().split("\t")  # split variant in its fields
-        if _skip_variant(variant[6]):  # filter != PASS
+        if _skip_variant(variant[6], keep):  # filter != PASS
             continue
         if afidx == -1:  # retrieve AF position in info field (done once)
             afidx = _extract_af_idx(variant[7], debug)
@@ -970,16 +993,51 @@ def insert_variants(
     return chrom_snps_dict, indels_set, logindels
 
 
-def save_enriched_contig(reader: GenomeReader, outdir: str, debug: bool):
+def _save_enriched_contig(reader: GenomeReader, outdir: str, debug: bool) -> None:
+    """Write an enriched contig sequence to a FASTA file on disk. This function
+    derives a file name from the original contig FASTA and delegates the actual
+    writing to a `GenomeWriter`.
+
+    The function preserves the original contig header, appends an `.enriched.fa`
+    suffix to the base FASTA name, and writes the in-memory enriched sequence
+    so it can be used for downstream analyses.
+
+    Args:
+        reader (GenomeReader): GenomeReader instance providing the contig header
+            and enriched sequence to be written.
+        outdir (str): Output directory where the enriched FASTA file will be created.
+        debug (bool): Flag indicating whether to use debug-aware error handling during
+            file writing.
+    """
     # retrieve contig fasta prefix
     prefix = os.path.splitext(os.path.basename(reader.fname))[0]
     writer = GenomeWriter(os.path.join(outdir, f"{prefix}.enriched.fa"), debug)
     writer.write(reader.header, reader.sequence_enr)  # write enriched contig sequence
 
 
-def store_dictionary_json(
-    chrom_snps_dict: Dict, contig: str, outdir: str, verbosity: int, debug: bool
+def _store_dictionary_json(
+    chrom_snps_dict: Dict[str, str],
+    contig: str,
+    outdir: str,
+    verbosity: int,
+    debug: bool,
 ) -> None:
+    """Persist the SNP dictionary for a contig as a JSON file on disk. This enables
+    downstream tools to reload compact SNP annotations without reparsing the VCF.
+
+    The function builds a contig-specific JSON path, reports progress according
+    to the verbosity level, attempts to dump the dictionary, and delegates error
+    handling to the enrichment exception handler.
+
+    Args:
+        chrom_snps_dict (Dict[str,str]): Dictionary storing SNP annotations keyed
+            by 'contig,pos'.
+        contig (str): Normalized contig name whose SNP dictionary is being saved.
+        outdir (str): Output directory where the JSON file will be written.
+        verbosity (int): Verbosity level controlling progress messages.
+        debug (bool): Flag indicating whether to include debug details in error
+            handling.
+    """
     # store dictionary in json file
     fname = os.path.join(outdir, f"snps_dict_{contig}.json")
     print_verbosity(
@@ -1006,9 +1064,24 @@ def store_dictionary_json(
     )
 
 
-def save_indels_fasta(
+def _save_indels_fasta(
     indelsdir: str, contig: str, indels_contig: IndelsSet, debug: bool
 ) -> None:
+    """Write all synthetic indel sequences for a contig to a FASTA file. This
+    produces a dedicated 'fake' contig file that aggregates every reconstructed
+    indel sequence for downstream analyses.
+
+    The function opens a contig-specific FASTA path, writes a single header,
+    streams each indel sequence separated by sentinel 'N' lines, and reports
+    any I/O failures through the enrichment exception handler.
+
+    Args:
+        indelsdir (str): Output directory where the indel FASTA file will be written.
+        contig (str): Normalized contig name whose indel sequences are being exported.
+        indels_contig (IndelSet): `IndelsSet` collection providing the synthetic
+            indel sequences.
+        debug (bool): Flag indicating whether to include debug details in error handling.
+    """
     fasta_path = os.path.join(indelsdir, f"fake{contig}.fa")
     try:
         with open(fasta_path, "w") as fout:
@@ -1026,9 +1099,23 @@ def save_indels_fasta(
         )
 
 
-def store_indels_log(
+def _store_indels_log(
     indelsdir: str, contig: str, logindels: List[List[str]], debug: bool
 ) -> None:
+    """Write the collected indel log entries for a contig to a tab-delimited file.
+    This creates a human-readable summary of indel coordinates, alleles and
+    carrier information for downstream inspection.
+
+    The function opens a contig-specific log path, writes a fixed header, streams
+    each log row as a tab-separated line, and reports any I/O failures through
+    the enrichment exception handler.
+
+    Args:
+        indelsdir (str): Output directory where the indel log file will be written.
+        contig (str): Normalized contig name whose indel log is being exported.
+        logindels (List[List[str]]): Accumulated list of indel log rows to be serialized.
+        debug (bool): Flag indicating whether to include debug details in error handling.
+    """
     log_path = os.path.join(indelsdir, f"log{contig}.txt")
     header = ["CHR", "SAMPLES", "rsID", "AF", "indel", "FAKEPOS", "refseq"]
     try:
@@ -1047,12 +1134,27 @@ def store_indels_log(
 
 
 def _enrich_variants_worker(
-    args: Tuple[str, str, str, str, str, bool, bool, int, bool],
+    args: Tuple[str, str, str, bool, str, str, bool, bool, int, bool],
 ) -> None:
+    """Execute variant enrichment for a single contig in an isolated worker.
+    This function is intended to be run in parallel across contigs.
+
+    The function loads the contig FASTA, parses the corresponding VCF to insert
+    SNPs and optional indels, writes enriched sequences and auxiliary outputs to
+    disk, and reports any parsing or I/O errors through the enrichment exception
+    handler.
+
+    Args:
+        args (Tuple[str,str,str,bool,str,str,bool,bool,int,bool]): Tuple bundling the
+            contig identifier, input FASTA and VCF paths, keep flag, SNP and indel
+            output directories, analysis and dictionary flags, verbosity level and
+            debug flag.
+    """
     (
         contig,
         fasta,
         vcf,
+        keep,
         snpsdir,
         indelsdir,
         indels_analysis,
@@ -1068,19 +1170,30 @@ def _enrich_variants_worker(
     reader.read()  # read contig sequence
     try:
         with gzip.open(vcf, mode="rt") as fin:
-            samples = retrieve_samples(fin, vcf, debug)
+            samples = _retrieve_samples(fin, vcf, debug)
             # enrich contig sequences with snps and indels
-            chrom_snps_dict, indels_contig, logindels = insert_variants(fin, reader, samples, contig, indels_analysis, chrom_snps_dict, logindels, store_dictionary, debug)  # type: ignore
+            chrom_snps_dict, indels_contig, logindels = _insert_variants(
+                fin,
+                reader,
+                samples,
+                contig,
+                keep,
+                indels_analysis,
+                chrom_snps_dict,
+                logindels,
+                store_dictionary,
+                debug,
+            )
             # store enriched contig sequence
-            save_enriched_contig(reader, snpsdir, debug)
+            _save_enriched_contig(reader, snpsdir, debug)
             if indels_analysis:
-                save_indels_fasta(indelsdir, contig, indels_contig, debug)
+                _save_indels_fasta(indelsdir, contig, indels_contig, debug)
             if store_dictionary:  # dump snp dictionary in json
-                store_dictionary_json(
+                _store_dictionary_json(
                     chrom_snps_dict, contig, snpsdir, verbosity, debug
                 )
                 if indels_analysis:
-                    store_indels_log(indelsdir, contig, logindels, debug)
+                    _store_indels_log(indelsdir, contig, logindels, debug)
     except (IOError, Exception) as e:
         exception_handler(
             CrispritzEnrichmentError,
@@ -1096,9 +1209,10 @@ def _enrich_variants_worker(
     )
 
 
-def enrich_variants(
+def _enrich_variants(
     fasta_vcf_map: Dict[str, EnrichPair],
     contigs: List[str],
+    keep: bool,
     indels_analysis: bool,
     snpsdir: str,
     indelsdir: str,
@@ -1107,12 +1221,38 @@ def enrich_variants(
     verbosity: int,
     debug: bool,
 ) -> None:
+    """Coordinate per-contig variant enrichment across a set of contigs.
+    This function prepares worker tasks and runs them either serially or in
+    parallel to generate enriched contig FASTA files and auxiliary outputs.
+
+    The function builds a list of enrichment jobs from the FASTA/VCF mapping,
+    chooses between a simple loop and a multiprocessing pool based on the
+    requested thread count, and tracks progress using the configured verbosity
+    settings.
+
+    Args:
+        fasta_vcf_map (Dict[str,EnrichPair]): Mapping from contig name to paired
+            ASTA/VCF inputs.
+        contigs (List[str]): List of contig identifiers to be enriched.
+        keep (bool): Flag indicating whether to keep all variants, including those
+            failing FILTER.
+        indels_analysis (bool): Flag indicating whether indel variants should be
+            processed in addition to SNPs.
+        snpsdir (str): Output directory where SNP-enriched contig FASTA files are written.
+        indelsdir (str): Output directory where indel-related outputs are written.
+        store_dictionary (bool): Flag indicating whether SNP/indel metadata dictionaries
+            and logs should be generated.
+        threads (int): Maximum number of worker processes to use for enrichment.
+        verbosity (int): Verbosity level controlling progress messages.
+        debug (bool): Flag indicating whether to use debug-aware error handling.
+    """
     # initialize tasks for genome enrichment
     tasks = [
         (
             contig,
             fasta_vcf_map[contig].fasta,
             fasta_vcf_map[contig].vcf,
+            keep,
             snpsdir,
             indelsdir,
             indels_analysis,
@@ -1134,8 +1274,9 @@ def enrich_variants(
                     pbar.update(1)
 
 
-def run_enrich_genome(
+def _run_enrich_genome(
     fasta_vcf_map: Dict[str, EnrichPair],
+    keep: bool,
     indels_analysis: bool,
     outdir: str,
     store_dictionary: bool,
@@ -1143,15 +1284,39 @@ def run_enrich_genome(
     verbosity: int,
     debug: bool,
 ) -> None:
+    """Run the internal genome enrichment workflow for all contigs in the map.
+    This orchestrates directory setup, handling of contigs with and without
+    variants, and parallel execution of per-contig enrichment.
+
+    The function splits contigs based on VCF availability, prepares output
+    folders, copies unchanged FASTA sequences for contigs lacking variants, and
+    delegates variant-aware enrichment to `_enrich_variants` with the requested
+    threading and logging configuration.
+
+    Args:
+        fasta_vcf_map (Dict[str,EnrichPair]): Mapping from contig name to paired
+            FASTA/VCF inputs.
+        keep (bool): Flag indicating whether to keep all variants, including those
+            failing FILTER.
+        indels_analysis (bool): Flag indicating whether indel variants should be
+            processed in addition to SNPs.
+        outdir (str): Base output directory where enrichment results will be created.
+        store_dictionary (bool): Flag indicating whether SNP/indel metadata dictionaries
+            and logs should be generated.
+        threads (int): Maximum number of worker processes to use for enrichment.
+        verbosity (int): Verbosity level controlling progress messages.
+        debug (bool): Flag indicating whether to use debug-aware error handling.
+    """
     # retrieve contig to enrich with variants and those without variants associated
-    contigs_vcf, contigs_wo_vcf = split_contigs(fasta_vcf_map, verbosity)
-    snpsdir, indelsdir = prepare_output_dir(outdir)  # prepare enrichment output folder
+    contigs_vcf, contigs_wo_vcf = _split_contigs(fasta_vcf_map, verbosity)
+    snpsdir, indelsdir = _prepare_output_dir(outdir)  # prepare enrichment output folder
     # copy content of original fasta for contig without variants
-    enrich_no_variants(fasta_vcf_map, contigs_wo_vcf, snpsdir, verbosity, debug)
+    _enrich_no_variants(fasta_vcf_map, contigs_wo_vcf, snpsdir, verbosity, debug)
     # enrich contig fasta with vcf variants
-    enrich_variants(
+    _enrich_variants(
         fasta_vcf_map,
         contigs_vcf,
+        keep,
         indels_analysis,
         snpsdir,
         indelsdir,
@@ -1165,6 +1330,7 @@ def run_enrich_genome(
 def enrich_genome(
     fastas: List[str],
     vcfs: List[str],
+    keep: bool,
     process_indels: bool,
     store_dictionary: bool,
     outdir: str,
@@ -1172,12 +1338,36 @@ def enrich_genome(
     verbosity: int,
     debug: bool,
 ) -> None:
+    """Top-level entry point to enrich an entire genome with variants from VCF files.
+    This function wires together input discovery, per-contig enrichment and high-level
+    progress reporting.
+
+    The function builds a FASTA/VCF mapping from the provided file lists, logs the
+    start and end of the genome-wide workflow, and delegates detailed processing to
+    `_run_enrich_genome` using the requested keep, indel, dictionary and threading
+    options.
+
+    Args:
+        fastas (List[str]): List of input contig FASTA file paths.
+        vcfs (List[str]): List of input VCF file paths containing variants.
+        keep (bool): Flag indicating whether to keep all variants, including those
+            failing FILTER.
+        process_indels (bool): Flag indicating whether indel variants should be
+            processed in addition to SNPs.
+        store_dictionary (bool): Flag indicating whether SNP/indel metadata dictionaries
+            and logs should be generated.
+        outdir (str): Base output directory where enrichment results will be created.
+        threads (int): Maximum number of worker processes to use for enrichment.
+        verbosity (int): Verbosity level controlling progress messages.
+        debug (bool): Flag indicating whether to use debug-aware error handling.
+    """
     # construct a fasta-vcf files map
-    fasta_vcf_map = construct_fasta_vcf_map(fastas, vcfs, verbosity, debug)
+    fasta_vcf_map = _construct_fasta_vcf_map(fastas, vcfs, verbosity, debug)
     print_verbosity("Enriching genome with input variants", verbosity, VERBOSITYLVL[1])
     start = time()  # genome enrichment start point
-    run_enrich_genome(
+    _run_enrich_genome(
         fasta_vcf_map,
+        keep,
         process_indels,
         outdir,
         store_dictionary,

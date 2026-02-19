@@ -10,6 +10,7 @@ def add_variants_cli(args: CrispritzEnrichmentInputArgs) -> None:
     enrich_genome(
         args.fastas,
         args.vcfs,
+        args.keep,
         args.indels,
         args.store_dictionary,
         args.outdir,
@@ -22,6 +23,7 @@ def add_variants_cli(args: CrispritzEnrichmentInputArgs) -> None:
 def add_variants(
     fasta_files: List[str],
     vcf_files: List[str],
+    keep: bool = False,
     process_indels: bool = False,
     store_dictionary: bool = False,
     outdir: str = os.getcwd(),
@@ -32,6 +34,7 @@ def add_variants(
     enrich_genome(
         fasta_files,
         vcf_files,
+        keep,
         process_indels,
         store_dictionary,
         outdir,
