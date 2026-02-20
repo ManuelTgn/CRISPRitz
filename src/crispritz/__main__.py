@@ -16,11 +16,15 @@ Run 'crispritz -h/--help' to display the complete help
 """
 
 from .utils import TOOLNAME, SUBCOMMANDS
-from .crispritz_argparse import CrispritzArgumentParser, CrispritzEnrichmentInputArgs
+from .crispritz_argparse import (
+    CrispritzArgumentParser,
+    CrispritzEnrichmentInputArgs,
+    CrispritzIndexingInputArgs,
+)
 from .version import __version__
 from .exception_handlers import sigint_handler
 from .enrichment import add_variants_cli
-from .ternary_search_tree import index_genome_cli
+from .indexing import index_genome_cli
 
 from argparse import _SubParsersAction
 from time import time
@@ -170,98 +174,107 @@ def create_enrichment_parser(subparser: _SubParsersAction) -> _SubParsersAction:
     )
     return parser_enrichment
 
+
 def create_indexing_parser(subparser: _SubParsersAction) -> _SubParsersAction:
     parser_enrichment = subparser.add_parser(
         SUBCOMMANDS[1],
         usage="CRISPRitz index-genome {version}\n\nUsage:\n"
-        "\tcrisprhawk index-genome\n\n",
-        description="",
-        help="",
+        "\tcrisprhawk index-genome --genome <genome-dir> --genome-name "
+        "<genome-name> --pam <pam-file>\n\n",
+        description="Create a genome TST index for fast (optionally bulge-aware) "
+        "off-target candidate searches.",
+        help="Build a genome index (TST: Ternary Search Tree) used for fast "
+        "off-target candidate retrieval. This command scans the input FASTA "
+        "files, extracts all candidate targets matching the provided PAM, and "
+        "stores them in a compact TST-based index. The resulting index enables "
+        "rapid searches and supports bulge-aware matching (DNA/RNA bulges)",
         add_help=False,
     )
     general_group = parser_enrichment.add_argument_group("General options")
     general_group.add_argument(
         "-h", "--help", action="help", help="show this help message and exit"
     )
-    # required_group = parser_enrichment.add_argument_group("Options")
-    # required_group.add_argument(
-    #     "--vcf",
-    #     type=str,
-    #     metavar="VCF-DIR",
-    #     dest="vcf",
-    #     required=True,
-    #     help="directory containing the VCF files used for genome enrichment. "
-    #     "Each chromosome must be stored in a separate VCF file "
-    #     "(e.g., chr1.vcf.gz, chr2.vcf.gz)",
-    # )
-    # required_group.add_argument(
-    #     "--genome",
-    #     type=str,
-    #     metavar="FASTA-DIR",
-    #     dest="genome",
-    #     required=True,
-    #     help="directory containing the reference genome FASTA files. "
-    #     "Each chromosome must be stored in a separate FASTA file "
-    #     "(e.g., chr1.fa, chr2.fa). All FASTA files in this directory "
-    #     "will be used as the reference genome",
-    # )
-    # optional_group = parser_enrichment.add_argument_group("Optional arguments")
-    # optional_group.add_argument(
-    #     "--indels",
-    #     action="store_true",
-    #     dest="indels",
-    #     default=False,
-    #     help="include indels during genome enrichment. "
-    #     "If enabled, insertions and deletions are applied to the reference "
-    #     "sequence individually (default: disabled)",
-    # )
-    # optional_group.add_argument(
-    #     "--keep",
-    #     action="store_true",
-    #     dest="keep",
-    #     default=False,
-    #     help="include all variants during genome enrichment, regardless of their "
-    #     "FILTER status. By default, only variants with FILTER=PASS are included "
-    #     "(default: disabled)",
-    # )
-    # optional_group.add_argument(
-    #     "--outdir",
-    #     type=str,
-    #     metavar="OUTDIR",
-    #     dest="outdir",
-    #     required=False,
-    #     default=os.getcwd(),
-    #     help="directory where output folder will be written. "
-    #     "(default: a `variants_genome` folder will be created in the current "
-    #     "working directory)",
-    # )
-    # optional_group.add_argument(
-    #     "--threads",
-    #     type=int,
-    #     metavar="THREADS",
-    #     dest="threads",
-    #     required=False,
-    #     default=1,
-    #     help="number of threads. Use 0 for using all available cores (default: 1)",
-    # )
-    # optional_group.add_argument(
-    #     "--verbosity",
-    #     type=int,
-    #     metavar="VERBOSITY",
-    #     dest="verbosity",
-    #     required=False,
-    #     default=1,  # minimal output
-    #     help="verbosity level of output messages: 0 = Silent, 1 = Normal, 2 = "
-    #     "Verbose, 3 = Debug (default: 1)",
-    # )
-    # optional_group.add_argument(
-    #     "--debug",
-    #     action="store_true",
-    #     default=False,
-    #     help="enter debug mode and trace the full error stack",
-    # )
+    required_group = parser_enrichment.add_argument_group("Options")
+    required_group.add_argument(
+        "--genome",
+        type=str,
+        metavar="FASTA-DIR",
+        dest="genome",
+        required=True,
+        help="path to a directory containing the reference/enriched genome in "
+        "FASTA format. Each chromosome must be provided as a separate FASTA file "
+        "(e.g., chr1.fa, chr2.fa, chrX.fa). All FASTA files in this directory "
+        "will be scanned to extract target candidates and to build the TST index",
+    )
+    required_group.add_argument(
+        "--genome-name",
+        type=str,
+        metavar="GENOME-NAME",
+        dest="genome_name",
+        required=True,
+        help="identifier used to name the generated TST index. A folder with "
+        "this name will be created to store the index associated with the input "
+        "genome",
+    )
+    required_group.add_argument(
+        "--pam",
+        type=str,
+        metavar="PAM-FILE",
+        dest="pam_file",
+        required=True,
+        help="path to a text file specifying the PAM model. The file must "
+        "contain: (1) the full pattern including a number of 'N' characters "
+        "equal to the guide length, and (2) a space-separated integer indicating "
+        "the PAM length. Example format: NNNNNNNNNNNNNNNNNNNNGG 3",
+    )
+    optional_group = parser_enrichment.add_argument_group("Optional arguments")
+    optional_group.add_argument(
+        "--bmax",
+        type=int,
+        metavar="BMAX",
+        dest="bmax",
+        default=0,
+        help="maximum number of bulges allowed during index construction and "
+        "off-target search. Larger bulges increase search sensitivity but also "
+        "computational cost (default: 0)",
+    )
+    optional_group.add_argument(
+        "--outdir",
+        type=str,
+        metavar="OUTDIR",
+        dest="outdir",
+        required=False,
+        default=os.getcwd(),
+        help="directory where output files will be written. If not specified, a "
+        "folder named '<GENOME-NAME>_<PAM>_<BMAX>' will be created in the "
+        "current working directory.",
+    )
+    optional_group.add_argument(
+        "--threads",
+        type=int,
+        metavar="THREADS",
+        dest="threads",
+        required=False,
+        default=1,
+        help="number of threads. Use 0 for using all available cores (default: 1)",
+    )
+    optional_group.add_argument(
+        "--verbosity",
+        type=int,
+        metavar="VERBOSITY",
+        dest="verbosity",
+        required=False,
+        default=1,  # minimal output
+        help="verbosity level of output messages: 0 = Silent, 1 = Normal, 2 = "
+        "Verbose, 3 = Debug (default: 1)",
+    )
+    optional_group.add_argument(
+        "--debug",
+        action="store_true",
+        default=False,
+        help="enter debug mode and trace the full error stack",
+    )
     return parser_enrichment
-
 
 
 def main():
@@ -274,7 +287,7 @@ def main():
         if args.command == SUBCOMMANDS[0]:  # add-variants
             add_variants_cli(CrispritzEnrichmentInputArgs(args, parser))
         if args.command == SUBCOMMANDS[1]:  # index-genome
-            index_genome_cli()
+            index_genome_cli(CrispritzIndexingInputArgs(args, parser))
     except KeyboardInterrupt:
         sigint_handler()  # catch SIGINT and exit gracefully
     sys.stdout.write(f"{TOOLNAME} - Elapsed time {time() - start:.2f}s\n")

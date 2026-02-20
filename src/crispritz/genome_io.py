@@ -1,8 +1,8 @@
 """ """
 
-from ..crispritz_error import GenomeReaderError, GenomeWriterError
-from ..exception_handlers import exception_handler
-from .variants import IndelPair
+from .crispritz_error import GenomeReaderError, GenomeWriterError
+from .exception_handlers import exception_handler
+from .enrichment.variants import IndelPair
 
 from typing import List, Optional
 
@@ -18,14 +18,12 @@ class GenomeReader:
     def __init__(self, fasta_path: str, debug: bool):
         self._debug = debug  # store debug flag
         self._fasta_path = fasta_path
-        self._sequence: Optional[List[str]] = None
-        self._sequence_enr: Optional[List[str]] = None
-        self._header: Optional[str] = None
+        self._sequence: List[str] = []
+        self._sequence_enr: List[str] = []
+        self._header: str = ""
 
     def __repr__(self) -> str:
-        seq_preview = (
-            f"[{len(self._sequence)} bases]" if self._sequence is not None else "None"
-        )
+        seq_preview = f"[{len(self._sequence)} bases]" if self._sequence else "None"
         return (
             f"GenomeReader(fasta_path={self._fasta_path!r}, "
             f"header={self._header!r}, "
@@ -34,7 +32,7 @@ class GenomeReader:
         )
 
     def __str__(self) -> str:
-        if self._header is None or self._sequence is None:
+        if not self._header or not self._sequence:
             status = "not read"
             details = ""
         else:
@@ -101,7 +99,7 @@ class GenomeReader:
             )
 
     def insert_snp(self, iupac_nt: str, pos: int) -> None:
-        if self._sequence_enr is None:
+        if not self._sequence_enr:
             exception_handler(
                 GenomeReaderError,
                 "Sequence not initialized, impossible to insert SNPs",
@@ -111,10 +109,19 @@ class GenomeReader:
         self._sequence_enr[pos] = iupac_nt  # add snp as iupac to sequence
 
     def insert_indel(self, indel: str, pos: int, offset: int) -> IndelPair:
-        assert self._sequence
         refseq = self._sequence[pos - INDELOFFSET : pos + INDELOFFSET + offset]
         indelseq = refseq[:INDELOFFSET] + list(indel) + refseq[INDELOFFSET + offset :]
         return IndelPair(refseq=refseq, indelseq=indelseq)
+
+    def to_string(self) -> str:
+        if not self._sequence_enr:
+            exception_handler(
+                GenomeReaderError,
+                f"Sequence not initialized, impossible to retrieve sequence as {str.__name__}",
+                os.EX_DATAERR,
+                self._debug,
+            )
+        return "".join(self._sequence_enr)
 
     @property
     def header(self) -> str:

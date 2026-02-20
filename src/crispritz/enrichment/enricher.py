@@ -2,7 +2,7 @@
 
 from ..crispritz_error import CrispritzEnrichmentError
 from ..exception_handlers import exception_handler
-from .genome_io import GenomeReader, GenomeWriter, INDELOFFSET
+from ..genome_io import GenomeReader, GenomeWriter, INDELOFFSET
 from ..dna_alphabet import IUPAC_ENCODER, IUPACTABLE
 from ..utils import (
     print_verbosity,
@@ -345,7 +345,7 @@ def _enrich_no_variants(
         prefix = os.path.splitext(os.path.basename(fasta_vcf_map[contig].fasta))[0]
         fasta_enr = os.path.join(outdir, f"{prefix}.enriched.fa")
         writer = GenomeWriter(fasta_enr, debug)  # write contig sequence
-        writer.write(reader.header, reader.sequence) 
+        writer.write(reader.header, reader.sequence)
         print_verbosity(
             f"Enrichment on contig  {contig} completed in {time() - start:.2f}s",
             verbosity,
@@ -669,9 +669,7 @@ def _process_snp(
     pos = snps.pos - 1  # snp position
     ref_nt = reader.sequence[pos]
     ref = snps.ref  # snp reference allele
-    if (
-        snps.ref not in IUPACTABLE[ref_nt]
-    ):  # mismatch between VCF and contig FASTA data
+    if snps.ref not in IUPACTABLE[ref_nt]:  # mismatch between VCF and contig FASTA data
         vid = _compute_vid(contig, snps.pos, ref, ",".join(snps.alts))
         exception_handler(
             CrispritzEnrichmentError,
