@@ -114,7 +114,7 @@ def _initialize_fasta(
         if not contig.startswith("chr"):
             contig = f"chr{contig}"  # avoid mismatch (see 1000G)
         # multiple fasta pointing to same contig
-        if fasta_vcf_map[contig].fasta is not None:
+        if fasta_vcf_map[contig].fasta:
             exception_handler(
                 CrispritzEnrichmentError,
                 f"Multiple FASTA file pointing to contig {contig}: "
@@ -215,7 +215,7 @@ def _initialize_vcf(
         _tabix_index(f, verbosity, debug)
         contig = _retrieve_contig_vcf(VariantFile(f, mode="r"), debug)
         # multiple vcf pointing to same contig
-        if fasta_vcf_map[contig].vcf is not None:
+        if fasta_vcf_map[contig].vcf:
             exception_handler(
                 CrispritzEnrichmentError,
                 f"Multiple VCF file pointing to conting {contig}: "
@@ -338,14 +338,14 @@ def _enrich_no_variants(
     for contig in contigs:  # just copy fasta without variants for enrichment
         print_verbosity(f"Enriching contig {contig}", verbosity, VERBOSITYLVL[3])
         start = time()  # track enrichment running time
-        assert fasta_vcf_map[contig].vcf is None
-        reader = GenomeReader(fasta_vcf_map[contig].fasta, debug)  # type: ignore
+        assert not fasta_vcf_map[contig].vcf
+        reader = GenomeReader(fasta_vcf_map[contig].fasta, debug)
         reader.read()  # read contig sequence
         # define output fasta filename
-        prefix = os.path.splitext(os.path.basename(fasta_vcf_map[contig].fasta))[0]  # type: ignore
+        prefix = os.path.splitext(os.path.basename(fasta_vcf_map[contig].fasta))[0]
         fasta_enr = os.path.join(outdir, f"{prefix}.enriched.fa")
         writer = GenomeWriter(fasta_enr, debug)  # write contig sequence
-        writer.write(reader.header, reader.sequence)  # type: ignore
+        writer.write(reader.header, reader.sequence) 
         print_verbosity(
             f"Enrichment on contig  {contig} completed in {time() - start:.2f}s",
             verbosity,
@@ -610,7 +610,7 @@ def insert_snp_in_dict(
         Dict[str,str]: The updated chromosome SNP dictionary containing the new
             position entry.
     """
-    snpkey = f"{contig},{snps.pos()}"  # retrieve snp key
+    snpkey = f"{contig},{snps.pos}"  # retrieve snp key
     # compute dictionary entry for each snp (multiallelic sites)
     entries = []
     for snp in snps.items:
@@ -666,13 +666,13 @@ def _process_snp(
             new entry for this position.
     """
     # retrieve ref allele from contig sequence
-    pos = snps.pos()  # snp position
+    pos = snps.pos - 1  # snp position
     ref_nt = reader.sequence[pos]
-    ref = snps.ref()  # snp reference allele
+    ref = snps.ref  # snp reference allele
     if (
-        snps.ref() not in IUPACTABLE[ref_nt]
+        snps.ref not in IUPACTABLE[ref_nt]
     ):  # mismatch between VCF and contig FASTA data
-        vid = _compute_vid(contig, pos, ref, ",".join(snps.alts()))
+        vid = _compute_vid(contig, snps.pos, ref, ",".join(snps.alts))
         exception_handler(
             CrispritzEnrichmentError,
             f"Mismatching REF alleles in VCF and FASTA: {ref} - {ref_nt} (variant: {vid})",
@@ -680,7 +680,7 @@ def _process_snp(
             debug,
         )
     # enrich contig sequence with iupac character
-    reader.insert_snp(IUPAC_ENCODER["".join(snps.alts() + [ref])], pos)
+    reader.insert_snp(IUPAC_ENCODER["".join(snps.alts + [ref])], pos)
     if store_dictionary:  # insert snp in dictionary
         insert_snp_in_dict(
             chrom_snps_dict, contig, variant[7], variant[9:], samples, afidx, snps

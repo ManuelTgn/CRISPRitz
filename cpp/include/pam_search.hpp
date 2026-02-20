@@ -32,7 +32,9 @@ public:
     size_t size() const { return length_; }
     
     // Allow access to raw data for optimized searching
-    const uint8_t* data() const { return data_.data(); }
+    const uint8_t* data() const noexcept { return data_.data(); }
+
+    size_t bytes() const noexcept { return data_.size(); }
     
     // Friend declaration for search functions that need direct access
     friend std::vector<int> search_pam_sites_fast(

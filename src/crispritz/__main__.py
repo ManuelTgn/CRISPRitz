@@ -20,6 +20,7 @@ from .crispritz_argparse import CrispritzArgumentParser, CrispritzEnrichmentInpu
 from .version import __version__
 from .exception_handlers import sigint_handler
 from .enrichment import add_variants_cli
+from .ternary_search_tree import index_genome_cli
 
 from argparse import _SubParsersAction
 from time import time
@@ -51,7 +52,8 @@ def create_parser_crispritz() -> CrispritzArgumentParser:
         description=None,
     )
     # crispritz enrichment
-    parser_enrichment = create_enrichment_parser(subparsers)
+    create_enrichment_parser(subparsers)
+    create_indexing_parser(subparsers)
     return parser
 
 
@@ -96,7 +98,7 @@ def create_enrichment_parser(subparser: _SubParsersAction) -> _SubParsersAction:
         metavar="VCF-DIR",
         dest="vcf",
         required=True,
-        help="Directory containing the VCF files used for genome enrichment. "
+        help="directory containing the VCF files used for genome enrichment. "
         "Each chromosome must be stored in a separate VCF file "
         "(e.g., chr1.vcf.gz, chr2.vcf.gz)",
     )
@@ -106,7 +108,7 @@ def create_enrichment_parser(subparser: _SubParsersAction) -> _SubParsersAction:
         metavar="FASTA-DIR",
         dest="genome",
         required=True,
-        help="Directory containing the reference genome FASTA files. "
+        help="directory containing the reference genome FASTA files. "
         "Each chromosome must be stored in a separate FASTA file "
         "(e.g., chr1.fa, chr2.fa). All FASTA files in this directory "
         "will be used as the reference genome",
@@ -117,7 +119,7 @@ def create_enrichment_parser(subparser: _SubParsersAction) -> _SubParsersAction:
         action="store_true",
         dest="indels",
         default=False,
-        help="Include indels during genome enrichment. "
+        help="include indels during genome enrichment. "
         "If enabled, insertions and deletions are applied to the reference "
         "sequence individually (default: disabled)",
     )
@@ -126,7 +128,7 @@ def create_enrichment_parser(subparser: _SubParsersAction) -> _SubParsersAction:
         action="store_true",
         dest="keep",
         default=False,
-        help="Include all variants during genome enrichment, regardless of their "
+        help="include all variants during genome enrichment, regardless of their "
         "FILTER status. By default, only variants with FILTER=PASS are included "
         "(default: disabled)",
     )
@@ -137,7 +139,7 @@ def create_enrichment_parser(subparser: _SubParsersAction) -> _SubParsersAction:
         dest="outdir",
         required=False,
         default=os.getcwd(),
-        help="Directory where output folder will be written. "
+        help="directory where output folder will be written. "
         "(default: a `variants_genome` folder will be created in the current "
         "working directory)",
     )
@@ -168,6 +170,99 @@ def create_enrichment_parser(subparser: _SubParsersAction) -> _SubParsersAction:
     )
     return parser_enrichment
 
+def create_indexing_parser(subparser: _SubParsersAction) -> _SubParsersAction:
+    parser_enrichment = subparser.add_parser(
+        SUBCOMMANDS[1],
+        usage="CRISPRitz index-genome {version}\n\nUsage:\n"
+        "\tcrisprhawk index-genome\n\n",
+        description="",
+        help="",
+        add_help=False,
+    )
+    general_group = parser_enrichment.add_argument_group("General options")
+    general_group.add_argument(
+        "-h", "--help", action="help", help="show this help message and exit"
+    )
+    # required_group = parser_enrichment.add_argument_group("Options")
+    # required_group.add_argument(
+    #     "--vcf",
+    #     type=str,
+    #     metavar="VCF-DIR",
+    #     dest="vcf",
+    #     required=True,
+    #     help="directory containing the VCF files used for genome enrichment. "
+    #     "Each chromosome must be stored in a separate VCF file "
+    #     "(e.g., chr1.vcf.gz, chr2.vcf.gz)",
+    # )
+    # required_group.add_argument(
+    #     "--genome",
+    #     type=str,
+    #     metavar="FASTA-DIR",
+    #     dest="genome",
+    #     required=True,
+    #     help="directory containing the reference genome FASTA files. "
+    #     "Each chromosome must be stored in a separate FASTA file "
+    #     "(e.g., chr1.fa, chr2.fa). All FASTA files in this directory "
+    #     "will be used as the reference genome",
+    # )
+    # optional_group = parser_enrichment.add_argument_group("Optional arguments")
+    # optional_group.add_argument(
+    #     "--indels",
+    #     action="store_true",
+    #     dest="indels",
+    #     default=False,
+    #     help="include indels during genome enrichment. "
+    #     "If enabled, insertions and deletions are applied to the reference "
+    #     "sequence individually (default: disabled)",
+    # )
+    # optional_group.add_argument(
+    #     "--keep",
+    #     action="store_true",
+    #     dest="keep",
+    #     default=False,
+    #     help="include all variants during genome enrichment, regardless of their "
+    #     "FILTER status. By default, only variants with FILTER=PASS are included "
+    #     "(default: disabled)",
+    # )
+    # optional_group.add_argument(
+    #     "--outdir",
+    #     type=str,
+    #     metavar="OUTDIR",
+    #     dest="outdir",
+    #     required=False,
+    #     default=os.getcwd(),
+    #     help="directory where output folder will be written. "
+    #     "(default: a `variants_genome` folder will be created in the current "
+    #     "working directory)",
+    # )
+    # optional_group.add_argument(
+    #     "--threads",
+    #     type=int,
+    #     metavar="THREADS",
+    #     dest="threads",
+    #     required=False,
+    #     default=1,
+    #     help="number of threads. Use 0 for using all available cores (default: 1)",
+    # )
+    # optional_group.add_argument(
+    #     "--verbosity",
+    #     type=int,
+    #     metavar="VERBOSITY",
+    #     dest="verbosity",
+    #     required=False,
+    #     default=1,  # minimal output
+    #     help="verbosity level of output messages: 0 = Silent, 1 = Normal, 2 = "
+    #     "Verbose, 3 = Debug (default: 1)",
+    # )
+    # optional_group.add_argument(
+    #     "--debug",
+    #     action="store_true",
+    #     default=False,
+    #     help="enter debug mode and trace the full error stack",
+    # )
+    return parser_enrichment
+
+
 
 def main():
     start = time()  # track eleapsed time
@@ -178,6 +273,8 @@ def main():
         args = parser.parse_args(sys.argv[1:])  # parse input args
         if args.command == SUBCOMMANDS[0]:  # add-variants
             add_variants_cli(CrispritzEnrichmentInputArgs(args, parser))
+        if args.command == SUBCOMMANDS[1]:  # index-genome
+            index_genome_cli()
     except KeyboardInterrupt:
         sigint_handler()  # catch SIGINT and exit gracefully
     sys.stdout.write(f"{TOOLNAME} - Elapsed time {time() - start:.2f}s\n")

@@ -74,7 +74,7 @@ std::vector<uint8_t> encode_pam(std::string_view pam, bool reverse_comp) {
 
 } // anonymous namespace
 
-std::vector<int> search_pam_sites_fast(
+std::vector<int> search_pam_sites(
     std::string_view pam_sequence,
     const CompactGenome& genome,
     const SearchParams& params
@@ -108,7 +108,7 @@ std::vector<int> search_pam_sites_fast(
             #pragma omp for schedule(static) nowait
             for (size_t pos = 0; pos < search_end; ++pos) {
                 // Check forward strand
-                if (check_pam_match(genome.data_.data(), pam_fwd_data, pos, pam_limit, max_mm)) {
+                if (check_pam_match(genome.data(), pam_fwd_data, pos, pam_limit, max_mm)) {
                     int guide_start = static_cast<int>(pos + pam_limit - 1) - (pam_len - 1 + max_bulges);
                     if (guide_start >= 0) {
                         local_indices.push_back(guide_start);
@@ -116,7 +116,7 @@ std::vector<int> search_pam_sites_fast(
                 }
                 
                 // Check reverse strand
-                if (check_pam_match(genome.data_.data(), pam_rev_data, pos, pam_limit, max_mm)) {
+                if (check_pam_match(genome.data(), pam_rev_data, pos, pam_limit, max_mm)) {
                     if (pos <= genome_len - (pam_len + max_bulges)) {
                         local_indices.push_back(-static_cast<int>(pos));
                     }
@@ -137,14 +137,14 @@ std::vector<int> search_pam_sites_fast(
             #pragma omp for schedule(static) nowait
             for (size_t pos = 0; pos < search_end; ++pos) {
                 // Check forward strand
-                if (check_pam_match(genome.data_.data(), pam_fwd_data, pos, pam_limit, max_mm)) {
+                if (check_pam_match(genome.data(), pam_fwd_data, pos, pam_limit, max_mm)) {
                     if (pos <= genome_len - (pam_len + max_bulges)) {
                         local_indices.push_back(-static_cast<int>(pos));
                     }
                 }
                 
                 // Check reverse strand
-                if (check_pam_match(genome.data_.data(), pam_rev_data, pos, pam_limit, max_mm)) {
+                if (check_pam_match(genome.data(), pam_rev_data, pos, pam_limit, max_mm)) {
                     int guide_start = static_cast<int>(pos + pam_limit - 1) - (pam_len - 1 + max_bulges);
                     if (guide_start >= 0) {
                         local_indices.push_back(guide_start);
@@ -168,7 +168,7 @@ std::vector<int> search_pam_sites(
     const SearchParams& params
 ) {
     CompactGenome genome(genome_sequence);
-    return search_pam_sites_fast(pam_sequence, genome, params);
+    return search_pam_sites(pam_sequence, genome, params);
 }
 
 } // namespace pam

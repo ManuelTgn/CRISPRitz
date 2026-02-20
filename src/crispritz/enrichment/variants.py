@@ -78,17 +78,21 @@ class Snps:
         # expose a copy to avoid accidental external mutation
         return list(self._items)
 
+    @property
     def alts(self) -> List[str]:
         return [s.alt for s in self._items]
 
+    @property
     def gtidxs(self) -> List[int]:
         return [s.gtidx for s in self._items]
 
+    @property
     def pos(self) -> int:
         # all SNPs from one record share the same position
         assert self._items
         return self._items[0].pos
 
+    @property
     def ref(self) -> str:
         assert self._items
         return self._items[0].ref

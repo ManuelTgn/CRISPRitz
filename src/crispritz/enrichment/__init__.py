@@ -12,7 +12,7 @@ def add_variants_cli(args: CrispritzEnrichmentInputArgs) -> None:
         args.vcfs,
         args.keep,
         args.indels,
-        args.store_dictionary,
+        False,  # option only for crisprme-integration
         args.outdir,
         args.threads,
         args.verbosity,

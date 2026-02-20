@@ -12,8 +12,8 @@ class EnrichPair:
 
     def __init__(self, debug: bool) -> None:
         self._debug = debug  # store debug flag
-        self._fasta: Optional[str] = None
-        self._vcf: Optional[str] = None
+        self._fasta: str = ""
+        self._vcf: str = ""
 
     def __repr__(self) -> str:
         """Return a detailed string representation for debugging."""
@@ -27,7 +27,6 @@ class EnrichPair:
 
     @property
     def fasta(self) -> str:
-        assert self._fasta
         return self._fasta
 
     @fasta.setter
@@ -44,7 +43,6 @@ class EnrichPair:
 
     @property
     def vcf(self) -> str:
-        assert self._vcf
         return self._vcf
 
     @vcf.setter
