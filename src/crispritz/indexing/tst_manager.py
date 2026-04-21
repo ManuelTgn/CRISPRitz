@@ -13,7 +13,12 @@ import os
 
 
 def build_ternary_search_tree(
-    fastas: List[str], pam_file: str, bmax: int, verbosity: int, debug: bool
+    fastas: List[str],
+    pam_file: str,
+    bmax: int,
+    threads: int,
+    verbosity: int,
+    debug: bool,
 ) -> None:
     # read pam file for constructing ternary search tree for current pam
     pam = PAM(pam_file, debug)
@@ -28,6 +33,7 @@ def build_ternary_search_tree(
                 pam.guide_size + pam.size,
                 pam.size,
                 pam.upstream,
+                threads,
             )
         except Exception as e:
             exception_handler(

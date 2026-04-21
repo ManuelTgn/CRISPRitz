@@ -9,10 +9,10 @@ namespace crispritz
 {
 
     void build_tree(const std::string& sequence, const std::string& pam, int pam_length,
-                    int pam_limit, bool pam_at_start)
+                    int pam_limit, bool pam_at_start, int num_threads)
     {
         // set pam search parameters
-        pam::SearchParams params(pam_length, pam_limit, pam_at_start);
+        pam::SearchParams params(pam_length, pam_limit, pam_at_start, num_threads);
 
         // convert genomic sequence in bits
         pam::CompactGenome genome_bits(sequence);
@@ -21,7 +21,7 @@ namespace crispritz
         auto sites = pam::search_pam_sites_fast(pam, genome_bits, params);
 
         int counter = 0;
-        for (int i; i < sites.size(); i++)
+        for (int i = 0; i < sites.size(); i++)
         {
             if (sites[i] < 0)
             {

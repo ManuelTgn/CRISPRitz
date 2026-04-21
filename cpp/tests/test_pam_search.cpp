@@ -69,7 +69,7 @@ void test_pam_search_exact() {
     //                     0123456789...
     // NGG appears at positions: 4, 10, 16
     
-    SearchParams params(3, 3, 0, 0, false);  // No mismatches
+    SearchParams params(3, 3, false);  // No mismatches
     auto sites = search_pam_sites("NGG", genome, params);
     
     // Should find sites on both strands
@@ -85,7 +85,7 @@ void test_iupac_codes() {
     //                     0123456789...
     // NRG appears at positions: 5, 13, 15, 16
     
-    SearchParams params(3, 3, 0, 0, false);
+    SearchParams params(3, 3, false);
     auto sites = search_pam_sites("NRG", genome, params);  // R matches A or G
     
     assert(!sites.empty());
@@ -111,7 +111,7 @@ void test_performance() {
         genome[i+2] = 'G';
     }
     
-    SearchParams params(3, 3, 0, 0, false);
+    SearchParams params(3, 3, false, 4);
     
     auto start = std::chrono::high_resolution_clock::now();
     CompactGenome compact(genome);

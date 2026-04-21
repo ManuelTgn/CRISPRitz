@@ -101,7 +101,7 @@ namespace pam
 
         if (!pam_at_start)
         { // PAM at 5' (end of guide)
-#pragma omp parallel
+#pragma omp parallel num_threads(params.num_threads)
             {
                 std::vector<int> local_indices;
                 local_indices.reserve(1000);
@@ -137,7 +137,7 @@ namespace pam
         }
         else
         { // PAM at 3' (start of guide)
-#pragma omp parallel
+#pragma omp parallel num_threads(params.num_threads)
             {
                 std::vector<int> local_indices;
                 local_indices.reserve(1000);

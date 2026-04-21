@@ -14,9 +14,11 @@ namespace pam
         int pam_length;
         int pam_limit;     // How much of the PAM to check
         bool pam_at_start; // PAM at 3' (start) vs 5' (end)
+        int num_threads;
 
-        SearchParams(int len, int limit, bool at_start)
-            : pam_length(len), pam_limit(limit), pam_at_start(at_start)
+        SearchParams(int len, int limit, bool at_start, int threads = 1)
+            : pam_length(len), pam_limit(limit), pam_at_start(at_start),
+            num_threads(threads > 0 ? threads : 1)
         {
         }
     };
