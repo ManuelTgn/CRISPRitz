@@ -18,7 +18,7 @@ namespace pam
 
         SearchParams(int len, int limit, bool at_start, int threads = 1)
             : pam_length(len), pam_limit(limit), pam_at_start(at_start),
-            num_threads(threads > 0 ? threads : 1)
+              num_threads(threads > 0 ? threads : 1)
         {
         }
     };
