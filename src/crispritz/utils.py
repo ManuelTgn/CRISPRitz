@@ -17,7 +17,7 @@ COMMAND = "crispritz"
 VERBOSITYLVL = [0, 1, 2, 3]
 
 # sub commands
-SUBCOMMANDS = ["add-variants", "index-genome"]
+SUBCOMMANDS = ["add-variants", "index-genome", "search"]
 
 
 # ------------------------------------------------------------------------------

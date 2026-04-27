@@ -58,6 +58,7 @@ def create_parser_crispritz() -> CrispritzArgumentParser:
     # crispritz enrichment
     create_enrichment_parser(subparsers)
     create_indexing_parser(subparsers)
+    create_search_parser(subparsers)
     return parser
 
 
@@ -176,7 +177,7 @@ def create_enrichment_parser(subparser: _SubParsersAction) -> _SubParsersAction:
 
 
 def create_indexing_parser(subparser: _SubParsersAction) -> _SubParsersAction:
-    parser_enrichment = subparser.add_parser(
+    parser_indexing = subparser.add_parser(
         SUBCOMMANDS[1],
         usage="CRISPRitz index-genome {version}\n\nUsage:\n"
         "\tcrisprhawk index-genome --genome <genome-dir> --genome-name "
@@ -190,11 +191,11 @@ def create_indexing_parser(subparser: _SubParsersAction) -> _SubParsersAction:
         "rapid searches and supports bulge-aware matching (DNA/RNA bulges)",
         add_help=False,
     )
-    general_group = parser_enrichment.add_argument_group("General options")
+    general_group = parser_indexing.add_argument_group("General options")
     general_group.add_argument(
         "-h", "--help", action="help", help="show this help message and exit"
     )
-    required_group = parser_enrichment.add_argument_group("Options")
+    required_group = parser_indexing.add_argument_group("Options")
     required_group.add_argument(
         "--genome",
         type=str,
@@ -227,7 +228,7 @@ def create_indexing_parser(subparser: _SubParsersAction) -> _SubParsersAction:
         "equal to the guide length, and (2) a space-separated integer indicating "
         "the PAM length. Example format: NNNNNNNNNNNNNNNNNNNNGG 3",
     )
-    optional_group = parser_enrichment.add_argument_group("Optional arguments")
+    optional_group = parser_indexing.add_argument_group("Optional arguments")
     optional_group.add_argument(
         "--bmax",
         type=int,
@@ -274,7 +275,131 @@ def create_indexing_parser(subparser: _SubParsersAction) -> _SubParsersAction:
         default=False,
         help="enter debug mode and trace the full error stack",
     )
-    return parser_enrichment
+    return parser_indexing
+
+def create_search_parser(subparser: _SubParsersAction) -> _SubParsersAction:
+    parser_search = subparser.add_parser(
+        SUBCOMMANDS[1],
+        usage="CRISPRitz search {version}\n\nUsage:\n"
+        "\tcrisprhawk search --index-genome <index-genome-dir> --pam <pam-file> "
+        "--guides <guides-file> --mm <mismatches>\n\n",
+        description="Search for potential CRISPR off-target sites for each input "
+        "guide RNA using a pre-computed genome index based on a Ternary Search "
+        "Tree (TST).",
+        help="Identify potential off-target sites using a specified edit "
+        "distance, defined as the sum of mismatches (mandatory) and optional "
+        "DNA/RNA bulges. The search is performed on a pre-computed genome index "
+        "(TST: Ternary Search Tree) to ensure fast and scalable queries. "
+        "The algorithm traverses the indexed genome to extract all candidate "
+        "off-targets that satisfy the user-defined thresholds. Results are "
+        "reported in tab-separated format and can be further scored and/or "
+        "annotated in downstream analyses.",
+        add_help=False,
+    )
+    general_group = parser_search.add_argument_group("General options")
+    general_group.add_argument(
+        "-h", "--help", action="help", help="show this help message and exit"
+    )
+    required_group = parser_search.add_argument_group("Options")
+    required_group.add_argument(
+        "--index-genome",
+        type=str,
+        metavar="INDEX-GENOME",
+        dest="genome_index",
+        required=True,
+        help="Path to the genome index directory generated during the "
+        "'genome-index' step. This directory contains the pre-computed "
+        "TST structures used for off-target search",
+    )
+    required_group.add_argument(
+        "--pam",
+        type=str,
+        metavar="PAM-FILE",
+        dest="pamfile",
+        required=True,
+        help="path to a text file specifying the PAM model. The file must "
+        "contain: (1) the full pattern including a number of 'N' characters "
+        "equal to the guide length, and (2) a space-separated integer "
+        "indicating the PAM length. Example format: NNNNNNNNNNNNNNNNNNNNGG 3",
+    )
+    required_group.add_argument(
+        "--guides",
+        type=str,
+        metavar="GUIDES-FILE",
+        dest="guides_file",
+        required=True,
+        help="Path to a text file containing one or more guide RNA sequences "
+        "(one per line). Each guide must match the expected format implied "
+        "by the PAM model (i.e., compatible guide length and PAM structure). "
+        "Example format: CTAACAGTTGCTTTTATCACNNN",
+    )
+    required_group.add_argument(
+        "--mm",
+        type=int,
+        metavar="MISMATCHES",
+        dest="mm",
+        required=True,
+        help="Maximum number of mismatches allowed between the guide RNA and "
+        "candidate off-target sequences",
+    )
+    optional_group = parser_search.add_argument_group("Optional arguments")
+    optional_group.add_argument(
+        "--bdna",
+        type=int,
+        metavar="DNA-BULGES",
+        dest="bdna",
+        required=False,
+        default=0,
+        help="Maximum number of DNA bulges allowed during alignment between "
+        "the guide RNA and off-target sequences (default: 0)",
+    )
+    optional_group.add_argument(
+        "--brna",
+        type=int,
+        metavar="RNA-BULGES",
+        dest="brna",
+        required=False,
+        default=0,
+        help="Maximum number of RNA bulges allowed during alignment between "
+        "the guide RNA and off-target sequences (default: 0)",
+    )
+    optional_group.add_argument(
+        "--outdir",
+        type=str,
+        metavar="OUTDIR",
+        dest="outdir",
+        required=False,
+        default=os.getcwd(),
+        help="directory where output files will be written. If not specified, a "
+        "folder named '<GENOME-NAME>_<PAM>_<BMAX>' will be created in the "
+        "current working directory.",
+    )
+    optional_group.add_argument(
+        "--threads",
+        type=int,
+        metavar="THREADS",
+        dest="threads",
+        required=False,
+        default=1,
+        help="number of threads. Use 0 for using all available cores (default: 1)",
+    )
+    optional_group.add_argument(
+        "--verbosity",
+        type=int,
+        metavar="VERBOSITY",
+        dest="verbosity",
+        required=False,
+        default=1,  # minimal output
+        help="verbosity level of output messages: 0 = Silent, 1 = Normal, 2 = "
+        "Verbose, 3 = Debug (default: 1)",
+    )
+    optional_group.add_argument(
+        "--debug",
+        action="store_true",
+        default=False,
+        help="enter debug mode and trace the full error stack",
+    )
+    return parser_search
 
 
 def main():
@@ -288,6 +413,8 @@ def main():
             add_variants_cli(CrispritzEnrichmentInputArgs(args, parser))
         if args.command == SUBCOMMANDS[1]:  # index-genome
             index_genome_cli(CrispritzIndexingInputArgs(args, parser))
+        if args.command == SUBCOMMANDS[2]:  # search
+            pass
     except KeyboardInterrupt:
         sigint_handler()  # catch SIGINT and exit gracefully
     sys.stdout.write(f"{TOOLNAME} - Elapsed time {time() - start:.2f}s\n")
