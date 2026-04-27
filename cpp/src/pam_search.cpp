@@ -32,7 +32,6 @@ namespace pam
         inline bool check_pam_match(const uint8_t* genome_data, const uint8_t* pam_data, size_t pos,
                                     int pam_limit)
         {
-            int mismatches = 0;
 
             for (int i = 0; i < pam_limit; ++i)
             {

@@ -505,8 +505,8 @@ namespace crispritz
 
             // allocate root
             mutable_this->alloc_node();
-            nodes_[0].splitchar = '\0';
-            nodes_[0].splitchar_enc = 0;
+            mutable_this->nodes_[0].splitchar = '\0';
+            mutable_this->nodes_[0].splitchar_enc = 0;
 
             mutable_this->insert_balanced(chunk_start, chunk_end - 1, chunk_start);
 
