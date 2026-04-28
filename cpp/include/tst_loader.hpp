@@ -108,20 +108,6 @@ class TSTLoader
     void deserialize_node(std::ifstream& file, char chars[2], std::bitset<4> bits[2],
                           char& in, uint8_t& flag, int& node_idx);
 
-    /**
-     * @brief Decodes a single nibble value to the corresponding IUPAC char.
-     * @param nibble 4-bit encoded nucleotide value.
-     * @return IUPAC character ('A','C','G','T','R',…,'0','_').
-     */
-    static char nibble_to_char(uint8_t nibble) noexcept;
-
-    /**
-     * @brief Decodes a single nibble value for a PAM leaf entry.
-     * @param nibble 4-bit encoded nucleotide value (high nibble of each byte).
-     * @return IUPAC character for PAM sequence.
-     */
-    static char pam_nibble_to_char(uint8_t nibble) noexcept;
-
     // ---- data members ------------------------------------------------------
     std::string           path_;
     int                   pam_size_;

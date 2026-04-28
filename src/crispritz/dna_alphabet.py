@@ -2,11 +2,19 @@
 
 from itertools import permutations
 
-# dna alphabet
+# ------------------------------------------------------------------------------
+#
+# Define DNA-related constant variables
+#
+# ------------------------------------------------------------------------------
+
+# define dna alphabet
 DNA = ["A", "C", "G", "T", "N"]
-# complete iupac alphabet
+
+# define complete iupac alphabet
 IUPAC = DNA + ["R", "Y", "S", "W", "K", "M", "B", "D", "H", "V"]
-# reverse complement dictionary
+
+# define reverse complement dictionary
 RC = {
     "A": "T",
     "C": "G",
@@ -41,7 +49,8 @@ RC = {
     "s": "s",
     "w": "w",
 }
-# dictionary to encode nucleotides combinations as iupac characters
+
+# define dictionary to encode nucleotides combinations as iupac characters
 IUPACTABLE = {
     "A": "A",
     "C": "C",
@@ -59,9 +68,21 @@ IUPACTABLE = {
     "D": "AGT",
     "N": "ACGT",
 }
-# dictionary to encode nucleotide strings as iupac characters
+
+# define dictionary to encode nucleotide strings as iupac characters
 IUPAC_ENCODER = {
     perm: k
     for k, v in IUPACTABLE.items()
     for perm in {"".join(p) for p in permutations(v)}
 }
+
+# ------------------------------------------------------------------------------
+#
+# Define DNA-related functions
+#
+# ------------------------------------------------------------------------------
+
+def reverse_complement(sequence: str) -> str:
+    return "".join(RC[nt] for nt in sequence[::-1])
+
+

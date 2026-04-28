@@ -53,6 +53,46 @@ namespace pam
             }
         }
 
+        // Encoding tables as constexpr for compile-time optimization
+        static constexpr char decode_genome(uint8_t bit)
+        {
+            switch (bit)
+            {
+            case 0b0001:
+                return 'A';
+            case 0b0010:
+                return 'C';
+            case 0b0100:
+                return 'G';
+            case 0b1000:
+                return 'T';
+            case 0b0000:
+                return 'N'; // Unknown
+            case 0b0101:
+                return 'R'; // A or G
+            case 0b1010:
+                return 'Y'; // C or T
+            case 0b0110:
+                return 'S'; // G or C
+            case 0b1001:
+                return 'W'; // A or T
+            case 0b1100:
+                return 'K'; // G or T
+            case 0b0011:
+                return 'M'; // A or C
+            case 0b1110:
+                return 'B'; // C or G or T
+            case 0b1101:
+                return 'D'; // A or G or T
+            case 0b1011:
+                return 'H'; // A or C or T
+            case 0b0111:
+                return 'V'; // A or C or G
+            default:
+                return '0';
+            }
+        }
+
         static constexpr uint8_t encode_pam(char c)
         {
             switch (c)
@@ -89,6 +129,45 @@ namespace pam
                 return 0b0111;
             default:
                 return 0b1111;
+            }
+        }
+
+        static constexpr char decode_pam(uint8_t bit)
+        {
+            switch (bit)
+            {
+            case 0b0001:
+                return 'A';
+            case 0b0010:
+                return 'C';
+            case 0b0100:
+                return 'G';
+            case 0b1000:
+                return 'T';
+            case 0b1111:
+                return 'N'; // Any (wildcard)
+            case 0b0101:
+                return 'R'; // A or G
+            case 0b1010:
+                return 'Y'; // C or T
+            case 0b0110:
+                return 'S'; // G or C
+            case 0b1001:
+                return 'W'; // A or T
+            case 0b1100:
+                return 'K'; // G or T
+            case 0b0011:
+                return 'M'; // A or C
+            case 0b1110:
+                return 'B'; // C or G or T
+            case 0b1101:
+                return 'D'; // A or G or T
+            case 0b1011:
+                return 'H'; // A or C or T
+            case 0b0111:
+                return 'V'; // A or C or G
+            default:
+                return '\0';
             }
         }
 

@@ -4,6 +4,7 @@ from .crispritz_error import CrispritzGuideError
 from .dna_alphabet import DNA
 from .exception_handlers import exception_handler
 from .pam import PAM
+from .dna_alphabet import reverse_complement
 
 from typing import List
 
@@ -14,10 +15,11 @@ class Guide:
 
     def __init__(self, sequence: str, pam: PAM, debug: bool) -> None:
         self._debug = debug  # store debug flag
-        # set guide sequence
+        # set guide sequence and its reverse complement
         self._sequence = _validate_guide_sequence(
             sequence, len(pam), pam.upstream, self._debug
         )
+        self._sequence_rc = reverse_complement(self._sequence)
 
     def __len__(self) -> int:
         return len(self._sequence)
@@ -25,6 +27,10 @@ class Guide:
     @property
     def sequence(self) -> str:
         return self._sequence
+    
+    @property
+    def reverse(self) -> str:
+        return self._sequence_rc
 
 
 class GuideList:

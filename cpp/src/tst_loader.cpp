@@ -3,7 +3,9 @@
  * @brief Implementation of TSTLoader – binary TST file deserialization.
  */
 
+#include "nucleotide_encoding.hpp"
 #include "tst_loader.hpp"
+#include "tst_utils.hpp"
 
 #include <cassert>
 #include <cstring>
@@ -25,51 +27,51 @@ TSTLoader::TSTLoader(std::string path, int pam_size)
 // Static helpers
 // ---------------------------------------------------------------------------
 
-char TSTLoader::nibble_to_char(uint8_t nibble) noexcept
-{
-    switch (nibble & 0x0F)
-    {
-    case 0x1: return 'A';
-    case 0x2: return 'C';
-    case 0x4: return 'G';
-    case 0x8: return 'T';
-    case 0x5: return 'R';
-    case 0xA: return 'Y';
-    case 0x6: return 'S';
-    case 0x9: return 'W';
-    case 0xC: return 'K';
-    case 0x3: return 'M';
-    case 0xE: return 'B';
-    case 0xD: return 'D';
-    case 0xB: return 'H';
-    case 0x7: return 'V';
-    case 0xF: return '_'; // sentinel
-    default:  return '0'; // null child
-    }
-}
+// char TSTLoader::nibble_to_char(uint8_t nibble) noexcept
+// {
+//     switch (nibble & 0x0F)
+//     {
+//     case 0x1: return 'A';
+//     case 0x2: return 'C';
+//     case 0x4: return 'G';
+//     case 0x8: return 'T';
+//     case 0x5: return 'R';
+//     case 0xA: return 'Y';
+//     case 0x6: return 'S';
+//     case 0x9: return 'W';
+//     case 0xC: return 'K';
+//     case 0x3: return 'M';
+//     case 0xE: return 'B';
+//     case 0xD: return 'D';
+//     case 0xB: return 'H';
+//     case 0x7: return 'V';
+//     case 0xF: return '_'; // sentinel
+//     default:  return '0'; // null child
+//     }
+// }
 
-char TSTLoader::pam_nibble_to_char(uint8_t nibble) noexcept
-{
-    // High nibble of each byte encodes the PAM nucleotide
-    switch (nibble & 0x0F)
-    {
-    case 0x1: return 'A';
-    case 0x2: return 'C';
-    case 0x4: return 'G';
-    case 0x8: return 'T';
-    case 0x5: return 'R';
-    case 0xA: return 'Y';
-    case 0x6: return 'S';
-    case 0x9: return 'W';
-    case 0xC: return 'K';
-    case 0x3: return 'M';
-    case 0xE: return 'B';
-    case 0xD: return 'D';
-    case 0xB: return 'H';
-    case 0x7: return 'V';
-    default:  return '\0';
-    }
-}
+// char TSTLoader::pam_nibble_to_char(uint8_t nibble) noexcept
+// {
+//     // High nibble of each byte encodes the PAM nucleotide
+//     switch (nibble & 0x0F)
+//     {
+//     case 0x1: return 'A';
+//     case 0x2: return 'C';
+//     case 0x4: return 'G';
+//     case 0x8: return 'T';
+//     case 0x5: return 'R';
+//     case 0xA: return 'Y';
+//     case 0x6: return 'S';
+//     case 0x9: return 'W';
+//     case 0xC: return 'K';
+//     case 0x3: return 'M';
+//     case 0xE: return 'B';
+//     case 0xD: return 'D';
+//     case 0xB: return 'H';
+//     case 0x7: return 'V';
+//     default:  return '\0';
+//     }
+// }
 
 void TSTLoader::unpack_byte(char chars[2], std::bitset<4> bits[2], char raw) noexcept
 {
@@ -189,10 +191,10 @@ void TSTLoader::load()
 
         file.read(reinterpret_cast<char*>(&leaf.guide_index), sizeof(int));
 
-        // Decode packed PAM bytes: each byte holds two 4-bit IUPAC codes.
-        // pam_size_ characters → ceil(pam_size_/2) bytes.
-        leaf.pam_dna.resize(pam_size_);
-        leaf.pam_dna_bit.resize(pam_size_);
+        // Decode packed PAM bytes, each byte holds two 4-bit IUPAC codes.
+        // pam_size_ characters -> ceil(pam_size_/2) bytes.
+        leaf.guide_seq.resize(pam_size_);
+        leaf.pam_seq_enc.resize(pam_size_);
 
         char in = 0;
         file.get(in);
@@ -237,7 +239,7 @@ void TSTLoader::load()
             default: break; // 0x00 → unknown, leave as '\0'
             }
 
-            leaf.pam_dna[j]     = pam_char;
+            leaf.pam_dna[j] = pam_char;
             leaf.pam_dna_bit[j] = std::bitset<4>(pam_bits);
             ++k;
         }
