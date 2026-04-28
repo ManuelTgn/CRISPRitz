@@ -2,11 +2,15 @@
 
 from ..crispritz_error import CrispritzTstError, CrispritzSearchError
 from ..exception_handlers import exception_handler
-from ..utils import print_verbosity, VERBOSITYLVL
+from ..guide import GuideList
 from ..pam import PAM
+from ..utils import print_verbosity, VERBOSITYLVL
 
-def search_offtargets_tst(genome_index: str, pam_file: str, guides, mm: int, bdna: int, brna: int, outdir: str, threads: int, verbosity: int, debug: bool) -> None:
-    pam = PAM(pam_file, debug)  # initialize pam_file
+from typing import List
+
+def search_offtargets_tst(indexes: List[str], pam_file: str, guides_file: str, mm: int, bdna: int, brna: int, outdir: str, threads: int, verbosity: int, debug: bool) -> None:
+    pam = PAM(pam_file, debug)  # initialize pam
+    guides = GuideList(guides_file, pam, debug)  # initialize guides
 
 
 

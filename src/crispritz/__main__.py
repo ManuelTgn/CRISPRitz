@@ -15,16 +15,18 @@ Usage:
 Run 'crispritz -h/--help' to display the complete help
 """
 
-from .utils import TOOLNAME, SUBCOMMANDS
 from .crispritz_argparse import (
     CrispritzArgumentParser,
     CrispritzEnrichmentInputArgs,
     CrispritzIndexingInputArgs,
+    CrispritzSearchInputArgs,
 )
-from .version import __version__
 from .exception_handlers import sigint_handler
 from .enrichment import add_variants_cli
 from .indexing import index_genome_cli
+from .search import search_offtargets_cli
+from .utils import TOOLNAME, SUBCOMMANDS
+from .version import __version__
 
 from argparse import _SubParsersAction
 from time import time
@@ -33,7 +35,7 @@ import sys
 import os
 
 
-def create_parser_crispritz() -> CrispritzArgumentParser:
+def _create_parser_crispritz() -> CrispritzArgumentParser:
     # force displaying docstring at each usage display and force
     # the default help to not being shown
     parser = CrispritzArgumentParser(usage=__doc__, add_help=False)  # type: ignore
@@ -56,13 +58,13 @@ def create_parser_crispritz() -> CrispritzArgumentParser:
         description=None,
     )
     # crispritz enrichment
-    create_enrichment_parser(subparsers)
-    create_indexing_parser(subparsers)
-    create_search_parser(subparsers)
+    _create_enrichment_parser(subparsers)
+    _create_indexing_parser(subparsers)
+    _create_search_parser(subparsers)
     return parser
 
 
-def create_enrichment_parser(subparser: _SubParsersAction) -> _SubParsersAction:
+def _create_enrichment_parser(subparser: _SubParsersAction) -> _SubParsersAction:
     """Create and configure the argument parser for the enrichment subcommand.
 
     Defines required and optional arguments for running the genome enrichment
@@ -176,7 +178,7 @@ def create_enrichment_parser(subparser: _SubParsersAction) -> _SubParsersAction:
     return parser_enrichment
 
 
-def create_indexing_parser(subparser: _SubParsersAction) -> _SubParsersAction:
+def _create_indexing_parser(subparser: _SubParsersAction) -> _SubParsersAction:
     parser_indexing = subparser.add_parser(
         SUBCOMMANDS[1],
         usage="CRISPRitz index-genome {version}\n\nUsage:\n"
@@ -278,7 +280,7 @@ def create_indexing_parser(subparser: _SubParsersAction) -> _SubParsersAction:
     return parser_indexing
 
 
-def create_search_parser(subparser: _SubParsersAction) -> _SubParsersAction:
+def _create_search_parser(subparser: _SubParsersAction) -> _SubParsersAction:
     parser_search = subparser.add_parser(
         SUBCOMMANDS[2],
         usage="CRISPRitz search {version}\n\nUsage:\n"
@@ -403,19 +405,24 @@ def create_search_parser(subparser: _SubParsersAction) -> _SubParsersAction:
     return parser_search
 
 
+def _parse_input_args():
+    parser = _create_parser_crispritz()  # parse input argument using custom parser
+    if not sys.argv[1:]:  # no input args -> print help and exit
+        parser.error_noargs()
+    args = parser.parse_args(sys.argv[1:])  # parse input args
+    return parser, args
+
+
 def main():
     start = time()  # track eleapsed time
     try:
-        parser = create_parser_crispritz()  # parse input argument using custom parser
-        if not sys.argv[1:]:  # no input args -> print help and exit
-            parser.error_noargs()
-        args = parser.parse_args(sys.argv[1:])  # parse input args
+        parser, args = _parse_input_args()  # parse input arguments
         if args.command == SUBCOMMANDS[0]:  # add-variants
             add_variants_cli(CrispritzEnrichmentInputArgs(args, parser))
-        if args.command == SUBCOMMANDS[1]:  # index-genome
+        elif args.command == SUBCOMMANDS[1]:  # index-genome
             index_genome_cli(CrispritzIndexingInputArgs(args, parser))
-        if args.command == SUBCOMMANDS[2]:  # search
-            pass
+        elif args.command == SUBCOMMANDS[2]:  # search
+            search_offtargets_cli(CrispritzSearchInputArgs(args, parser))
     except KeyboardInterrupt:
         sigint_handler()  # catch SIGINT and exit gracefully
     sys.stdout.write(f"{TOOLNAME} - Elapsed time {time() - start:.2f}s\n")
