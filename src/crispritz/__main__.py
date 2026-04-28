@@ -277,9 +277,10 @@ def create_indexing_parser(subparser: _SubParsersAction) -> _SubParsersAction:
     )
     return parser_indexing
 
+
 def create_search_parser(subparser: _SubParsersAction) -> _SubParsersAction:
     parser_search = subparser.add_parser(
-        SUBCOMMANDS[1],
+        SUBCOMMANDS[2],
         usage="CRISPRitz search {version}\n\nUsage:\n"
         "\tcrisprhawk search --index-genome <index-genome-dir> --pam <pam-file> "
         "--guides <guides-file> --mm <mismatches>\n\n",

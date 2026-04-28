@@ -62,7 +62,8 @@ class CrispritzTstError(CrispritzError):
 
     def __str__(self):
         return super().__str__()  # string representation for the exception
-    
+
+
 class CrispritzSearchError(CrispritzError):
     def __init__(self, value: str):
         # initialize exception object when raised
