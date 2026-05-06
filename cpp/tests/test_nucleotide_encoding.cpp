@@ -27,9 +27,9 @@ using pam::reverse_complement;
 // Minimal test harness
 // -----------------------------------------------------------------------------
 
-static int  g_total   = 0;
-static int  g_passed  = 0;
-static int  g_failed  = 0;
+static int g_total = 0;
+static int g_passed = 0;
+static int g_failed = 0;
 
 /**
  * @brief Records one test result; prints a short summary line.
@@ -37,8 +37,7 @@ static int  g_failed  = 0;
  * @param ok     Whether the test passed.
  * @param detail Optional extra information printed on failure.
  */
-static void record(const std::string& name, bool ok,
-                   const std::string& detail = "")
+static void record(const std::string& name, bool ok, const std::string& detail = "")
 {
     ++g_total;
     if (ok)
@@ -50,7 +49,8 @@ static void record(const std::string& name, bool ok,
     {
         ++g_failed;
         std::cout << "  [FAIL] " << name;
-        if (!detail.empty()) std::cout << " -- " << detail;
+        if (!detail.empty())
+            std::cout << " -- " << detail;
         std::cout << "\n";
     }
 }
@@ -58,13 +58,13 @@ static void record(const std::string& name, bool ok,
 // -----------------------------------------------------------------------------
 // Helpers
 // -----------------------------------------------------------------------------
- 
+
 /** @brief True when encode_genome(c) produces the expected 4-bit pattern. */
 static bool genome_encodes_to(char c, uint8_t expected)
 {
     return NucleotideEncoder::encode_genome(c) == expected;
 }
- 
+
 /** @brief True when encode_pam(c) produces the expected 4-bit pattern. */
 static bool pam_encodes_to(char c, uint8_t expected)
 {
@@ -74,7 +74,7 @@ static bool pam_encodes_to(char c, uint8_t expected)
 // -----------------------------------------------------------------------------
 // Test groups
 // -----------------------------------------------------------------------------
- 
+
 /** @brief Verify that all canonical IUPAC base characters encode correctly. */
 static void test_encode_genome_canonical()
 {
@@ -92,25 +92,25 @@ static void test_encode_genome_canonical()
 static void test_encode_genome_iupac_ambiguity()
 {
     // R = A | G
-    record("encode_genome R == A|G",  genome_encodes_to('R', 0b0101));
+    record("encode_genome R == A|G", genome_encodes_to('R', 0b0101));
     // Y = C | T
-    record("encode_genome Y == C|T",  genome_encodes_to('Y', 0b1010));
+    record("encode_genome Y == C|T", genome_encodes_to('Y', 0b1010));
     // S = G | C
-    record("encode_genome S == G|C",  genome_encodes_to('S', 0b0110));
+    record("encode_genome S == G|C", genome_encodes_to('S', 0b0110));
     // W = A | T
-    record("encode_genome W == A|T",  genome_encodes_to('W', 0b1001));
+    record("encode_genome W == A|T", genome_encodes_to('W', 0b1001));
     // K = G | T
-    record("encode_genome K == G|T",  genome_encodes_to('K', 0b1100));
+    record("encode_genome K == G|T", genome_encodes_to('K', 0b1100));
     // M = A | C
-    record("encode_genome M == A|C",  genome_encodes_to('M', 0b0011));
+    record("encode_genome M == A|C", genome_encodes_to('M', 0b0011));
     // B = C | G | T
-    record("encode_genome B == C|G|T",genome_encodes_to('B', 0b1110));
+    record("encode_genome B == C|G|T", genome_encodes_to('B', 0b1110));
     // D = A | G | T
-    record("encode_genome D == A|G|T",genome_encodes_to('D', 0b1101));
+    record("encode_genome D == A|G|T", genome_encodes_to('D', 0b1101));
     // H = A | C | T
-    record("encode_genome H == A|C|T",genome_encodes_to('H', 0b1011));
+    record("encode_genome H == A|C|T", genome_encodes_to('H', 0b1011));
     // V = A | C | G
-    record("encode_genome V == A|C|G",genome_encodes_to('V', 0b0111));
+    record("encode_genome V == A|C|G", genome_encodes_to('V', 0b0111));
 }
 
 /** @brief Unknown characters must not cause UB; they should return 0b0000. */
@@ -131,13 +131,12 @@ static void test_decode_genome_roundtrip()
     const std::string codes = "ACGTNRYSWKMBDHV";
     for (char c : codes)
     {
-        uint8_t enc  = NucleotideEncoder::encode_genome(c);
-        char    back = NucleotideEncoder::decode_genome(enc);
-        record(std::string("genome round-trip ") + c, back == c,
-               std::string("got '") + back + "'");
+        uint8_t enc = NucleotideEncoder::encode_genome(c);
+        char back = NucleotideEncoder::decode_genome(enc);
+        record(std::string("genome round-trip ") + c, back == c, std::string("got '") + back + "'");
     }
 }
- 
+
 /**
  * @brief The PAM encoder must treat 'N' as a wildcard (0b1111) rather than
  *        0b0000 as in the genome encoder.
@@ -158,13 +157,12 @@ static void test_decode_pam_roundtrip()
     const std::string codes = "ACGTN";
     for (char c : codes)
     {
-        uint8_t enc  = NucleotideEncoder::encode_pam(c);
-        char    back = NucleotideEncoder::decode_pam(enc);
-        record(std::string("pam round-trip ") + c, back == c,
-               std::string("got '") + back + "'");
+        uint8_t enc = NucleotideEncoder::encode_pam(c);
+        char back = NucleotideEncoder::decode_pam(enc);
+        record(std::string("pam round-trip ") + c, back == c, std::string("got '") + back + "'");
     }
 }
- 
+
 /** @brief Verify Watson–Crick and IUPAC complement table entries. */
 static void test_complement_basic()
 {
@@ -193,7 +191,7 @@ static void test_complement_iupac_pairs()
     record("complement S == S", NucleotideEncoder::complement('S') == 'S');
     record("complement W == W", NucleotideEncoder::complement('W') == 'W');
 }
- 
+
 /** @brief Unknown characters should be returned unchanged by complement. */
 static void test_complement_unknown_passthrough()
 {
@@ -206,7 +204,7 @@ static void test_rc_empty()
 {
     record("rc(\"\") == \"\"", reverse_complement("") == "");
 }
- 
+
 /** @brief Single character reverse complements. */
 static void test_rc_single_char()
 {
@@ -215,7 +213,7 @@ static void test_rc_single_char()
     record("rc(\"C\") == \"G\"", reverse_complement("C") == "G");
     record("rc(\"G\") == \"C\"", reverse_complement("G") == "C");
 }
- 
+
 /** @brief Palindromic sequence: rc must equal the original. */
 static void test_rc_palindrome()
 {
@@ -231,16 +229,13 @@ static void test_rc_general()
     // rc(ATCG) = CGAT
     record("rc(\"ATCG\") == \"CGAT\"", reverse_complement("ATCG") == "CGAT");
     // rc(GATTACA) = TGTAATC
-    record("rc(\"GATTACA\") == \"TGTAATC\"",
-           reverse_complement("GATTACA") == "TGTAATC");
+    record("rc(\"GATTACA\") == \"TGTAATC\"", reverse_complement("GATTACA") == "TGTAATC");
 }
- 
+
 /** @brief Applying rc twice must recover the original string. */
 static void test_rc_involution()
 {
-    const std::vector<std::string> seqs = {
-        "ACGT", "GATTACA", "TTTTAAAA", "RYMKSWHBVDN", "A"
-    };
+    const std::vector<std::string> seqs = {"ACGT", "GATTACA", "TTTTAAAA", "RYMKSWHBVDN", "A"};
     for (const auto& s : seqs)
     {
         bool ok = reverse_complement(reverse_complement(s)) == s;
@@ -261,7 +256,8 @@ static void test_genome_pam_self_match()
         uint8_t p = NucleotideEncoder::encode_pam(c);
         bool ok = (g & p) != 0;
         // 'N' in genome encodes to 0b0000 so AND with anything is 0 – expected
-        if (c == 'N') ok = !ok; // flip expectation: N in genome should NOT match
+        if (c == 'N')
+            ok = !ok; // flip expectation: N in genome should NOT match
         record(std::string("genome/pam self-match ") + c, ok);
     }
 }
@@ -269,52 +265,52 @@ static void test_genome_pam_self_match()
 // -----------------------------------------------------------------------------
 // main
 // -----------------------------------------------------------------------------
- 
+
 int main()
 {
     std::cout << "=== test_nucleotide_encoding ===\n\n";
- 
+
     std::cout << "-- encode_genome canonical --\n";
     test_encode_genome_canonical();
- 
+
     std::cout << "\n-- encode_genome IUPAC ambiguity --\n";
     test_encode_genome_iupac_ambiguity();
- 
+
     std::cout << "\n-- encode_genome unknown characters --\n";
     test_encode_genome_unknown();
- 
+
     std::cout << "\n-- decode_genome round-trip --\n";
     test_decode_genome_roundtrip();
- 
+
     std::cout << "\n-- encode_pam N is wildcard --\n";
     test_encode_pam_n_is_wildcard();
- 
+
     std::cout << "\n-- decode_pam round-trip --\n";
     test_decode_pam_roundtrip();
- 
+
     std::cout << "\n-- complement basic --\n";
     test_complement_basic();
- 
+
     std::cout << "\n-- complement IUPAC pairs --\n";
     test_complement_iupac_pairs();
- 
+
     std::cout << "\n-- complement unknown passthrough --\n";
     test_complement_unknown_passthrough();
- 
+
     std::cout << "\n-- reverse_complement edge cases --\n";
     test_rc_empty();
     test_rc_single_char();
     test_rc_palindrome();
     test_rc_general();
     test_rc_involution();
- 
+
     std::cout << "\n-- genome/pam self-match --\n";
     test_genome_pam_self_match();
- 
-    std::cout << "\n=== Results: " << g_passed << "/" << g_total
-              << " passed";
-    if (g_failed > 0) std::cout << " (" << g_failed << " FAILED)";
+
+    std::cout << "\n=== Results: " << g_passed << "/" << g_total << " passed";
+    if (g_failed > 0)
+        std::cout << " (" << g_failed << " FAILED)";
     std::cout << " ===\n";
- 
+
     return g_failed == 0 ? 0 : 1;
 }

@@ -1,9 +1,8 @@
 """ """
 
-from ..crispritz_error import EnrichmentPairError
-from ..exception_handlers import exception_handler
+from .crispritz_enrichment_error import EnrichmentPairError
 
-from typing import Optional
+from ..exception_handlers import exception_handler
 
 import os
 

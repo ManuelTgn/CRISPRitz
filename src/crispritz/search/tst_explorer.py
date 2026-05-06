@@ -4,7 +4,7 @@ from ..crispritz_error import CrispritzTstError, CrispritzSearchError
 from ..exception_handlers import exception_handler
 from ..guide import GuideList
 from ..pam import PAM
-from ..utils import print_verbosity, VERBOSITYLVL
+from ..verbosity import VERBOSITY_LVL, print_verbosity
 
 from typing import List
 

@@ -1,6 +1,6 @@
 """ """
 
-from typing import List, Iterator, Optional, Tuple
+from typing import List, Iterator, Optional
 from dataclasses import dataclass
 
 

@@ -1,16 +1,12 @@
 """ """
 
-from ..crispritz_error import CrispritzEnrichmentError
+from .crispritz_enrichment_error import CrispritzEnrichmentError
+
 from ..exception_handlers import exception_handler
 from ..genome_io import GenomeReader, GenomeWriter, INDELOFFSET
 from ..dna_alphabet import IUPAC_ENCODER, IUPACTABLE
-from ..utils import (
-    print_verbosity,
-    create_folder,
-    find_tabix_index,
-    set_processes,
-    VERBOSITYLVL,
-)
+from ..utils import create_folder, find_tabix_index, set_processes
+from ..verbosity import VERBOSITY_LVL, print_verbosity
 from ..progress import progress_bar, progress_bar_parallel
 from .enrichment_pair import EnrichPair
 from .variants import Snp, Snps, Indel, Indels, IndelsSet, IndelPair, IndelInfo
@@ -85,7 +81,7 @@ def _retrieve_contig_names(
     print_verbosity(
         "Retrieving contig names from FASTA in genome folder",
         verbosity,
-        VERBOSITYLVL[3],
+        VERBOSITY_LVL[3],
     )
     return {_retrieve_contig_name(FastaFile(f), debug) for f in fasta_files}
 
@@ -142,7 +138,7 @@ def _tabix_index(vcf_fname: str, verbosity: int, debug: bool) -> None:
         return
     try:  # tabix index not found, compute index
         print_verbosity(
-            f"Index not found, indexing (VCF: {vcf_fname})", verbosity, VERBOSITYLVL[3]
+            f"Index not found, indexing (VCF: {vcf_fname})", verbosity, VERBOSITY_LVL[3]
         )
         tabix_index(vcf_fname, preset="vcf")
     except (SamtoolsError, Exception) as e:
@@ -280,14 +276,14 @@ def _split_contigs(
     """
     # divide contigs with variants from those without for different processing
     print_verbosity(
-        "Retrieving contigs with associated VCFs", verbosity, VERBOSITYLVL[3]
+        "Retrieving contigs with associated VCFs", verbosity, VERBOSITY_LVL[3]
     )
     contigs_vcf = [contig for contig, p in fasta_vcf_map.items() if p.vcf is not None]
     contigs_wo_vcf = [contig for contig, p in fasta_vcf_map.items() if p.vcf is None]
     print_verbosity(
         f"Contigs with VCFs: {len(contigs_vcf)}, contigs without VCFs: {len(contigs_wo_vcf)}",
         verbosity,
-        VERBOSITYLVL[3],
+        VERBOSITY_LVL[3],
     )
     return contigs_vcf, contigs_wo_vcf
 
@@ -336,7 +332,7 @@ def _enrich_no_variants(
         debug (bool): Flag indicating whether to use debug-aware error handling.
     """
     for contig in contigs:  # just copy fasta without variants for enrichment
-        print_verbosity(f"Enriching contig {contig}", verbosity, VERBOSITYLVL[3])
+        print_verbosity(f"Enriching contig {contig}", verbosity, VERBOSITY_LVL[3])
         start = time()  # track enrichment running time
         assert not fasta_vcf_map[contig].vcf
         reader = GenomeReader(fasta_vcf_map[contig].fasta, debug)
@@ -349,7 +345,7 @@ def _enrich_no_variants(
         print_verbosity(
             f"Enrichment on contig  {contig} completed in {time() - start:.2f}s",
             verbosity,
-            VERBOSITYLVL[3],
+            VERBOSITY_LVL[3],
         )
 
 
@@ -1041,7 +1037,7 @@ def _store_dictionary_json(
     print_verbosity(
         f"Storing SNPs on conting {contig} in JSON dictionary",
         verbosity,
-        VERBOSITYLVL[3],
+        VERBOSITY_LVL[3],
     )
     start = time()  # track json dumping run time
     try:
@@ -1058,7 +1054,7 @@ def _store_dictionary_json(
     print_verbosity(
         f"Storing SNPs on conting {contig} in JSON dictionary completed in {time() - start:.2f}s",
         verbosity,
-        VERBOSITYLVL[3],
+        VERBOSITY_LVL[3],
     )
 
 
@@ -1162,7 +1158,7 @@ def _enrich_variants_worker(
     ) = args
     chrom_snps_dict: Dict[str, str] = {}
     logindels: List[List[str]] = []  # initialize variants dictionaries
-    print_verbosity(f"Enriching contig {contig}", verbosity, VERBOSITYLVL[3])
+    print_verbosity(f"Enriching contig {contig}", verbosity, VERBOSITY_LVL[3])
     start = time()  # track enrichment running time
     reader = GenomeReader(fasta, debug)
     reader.read()  # read contig sequence
@@ -1203,7 +1199,7 @@ def _enrich_variants_worker(
     print_verbosity(
         f"Enrichment on contig  {contig} completed in {time() - start:.2f}s",
         verbosity,
-        VERBOSITYLVL[3],
+        VERBOSITY_LVL[3],
     )
 
 
@@ -1361,7 +1357,7 @@ def enrich_genome(
     """
     # construct a fasta-vcf files map
     fasta_vcf_map = _construct_fasta_vcf_map(fastas, vcfs, verbosity, debug)
-    print_verbosity("Enriching genome with input variants", verbosity, VERBOSITYLVL[1])
+    print_verbosity("Enriching genome with input variants", verbosity, VERBOSITY_LVL[1])
     start = time()  # genome enrichment start point
     _run_enrich_genome(
         fasta_vcf_map,
@@ -1377,5 +1373,5 @@ def enrich_genome(
         f"Genome enrichment on {len(fasta_vcf_map)} contigs completed in "
         f"{time() - start:.2f}s",
         verbosity,
-        VERBOSITYLVL[2],
+        VERBOSITY_LVL[2],
     )

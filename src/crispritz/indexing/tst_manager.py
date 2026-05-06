@@ -3,7 +3,7 @@
 from ..crispritz_error import CrispritzTstError
 from ..exception_handlers import exception_handler
 from ..crispritz_cpp import build_tree_cpp
-from ..utils import print_verbosity, VERBOSITYLVL
+from ..verbosity import VERBOSITY_LVL, print_verbosity
 from ..genome_io import GenomeReader
 from ..pam import PAM
 
@@ -55,7 +55,7 @@ def build_ternary_search_tree(
             else reader.header
         )
         print_verbosity(
-            f"Building TST index for {contig} ({fasta})", verbosity, VERBOSITYLVL[2]
+            f"Building TST index for {contig} ({fasta})", verbosity, VERBOSITY_LVL[2]
         )
         try:
             build_tree_cpp(

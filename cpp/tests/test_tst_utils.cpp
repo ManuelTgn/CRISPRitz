@@ -12,8 +12,8 @@
  *  - crispritz::reverse_complement alias correctness
  */
 
-#include "tst_utils.hpp"
 #include "nucleotide_encoding.hpp"
+#include "tst_utils.hpp"
 
 #include <cassert>
 #include <cstdint>
@@ -27,12 +27,11 @@ using namespace crispritz;
 // Minimal test harness
 // -----------------------------------------------------------------------------
 
-static int g_total  = 0;
+static int g_total = 0;
 static int g_passed = 0;
 static int g_failed = 0;
 
-static void record(const std::string& name, bool ok,
-                   const std::string& detail = "")
+static void record(const std::string& name, bool ok, const std::string& detail = "")
 {
     ++g_total;
     if (ok)
@@ -44,7 +43,8 @@ static void record(const std::string& name, bool ok,
     {
         ++g_failed;
         std::cout << "  [FAIL] " << name;
-        if (!detail.empty()) std::cout << " -- " << detail;
+        if (!detail.empty())
+            std::cout << " -- " << detail;
         std::cout << "\n";
     }
 }
@@ -65,10 +65,9 @@ static void test_pack_nibbles_all_values()
             if (high_nibble(packed) != h || low_nibble(packed) != l)
             {
                 ok = false;
-                std::cout << "    h=" << (int)h << " l=" << (int)l
-                          << " packed=" << (int)packed
-                          << " hi=" << (int)high_nibble(packed)
-                          << " lo=" << (int)low_nibble(packed) << "\n";
+                std::cout << "    h=" << (int)h << " l=" << (int)l << " packed=" << (int)packed
+                          << " hi=" << (int)high_nibble(packed) << " lo=" << (int)low_nibble(packed)
+                          << "\n";
             }
         }
     }
@@ -98,22 +97,19 @@ static void test_low_nibble_extraction()
 /** @brief SENTINEL_NIBBLE must be 0b1111 (0x0F). */
 static void test_sentinel_nibble_value()
 {
-    record("SENTINEL_NIBBLE == 0x0F",
-           SENTINEL_NIBBLE == static_cast<uint8_t>(0x0F));
+    record("SENTINEL_NIBBLE == 0x0F", SENTINEL_NIBBLE == static_cast<uint8_t>(0x0F));
 }
 
 /** @brief NULL_CHILD_NIBBLE must be 0b0000 (0x00). */
 static void test_null_child_nibble_value()
 {
-    record("NULL_CHILD_NIBBLE == 0x00",
-           NULL_CHILD_NIBBLE == static_cast<uint8_t>(0x00));
+    record("NULL_CHILD_NIBBLE == 0x00", NULL_CHILD_NIBBLE == static_cast<uint8_t>(0x00));
 }
 
 /** @brief Sentinel and null must be distinct. */
 static void test_sentinel_vs_null_distinct()
 {
-    record("SENTINEL_NIBBLE != NULL_CHILD_NIBBLE",
-           SENTINEL_NIBBLE != NULL_CHILD_NIBBLE);
+    record("SENTINEL_NIBBLE != NULL_CHILD_NIBBLE", SENTINEL_NIBBLE != NULL_CHILD_NIBBLE);
 }
 
 // -----------------------------------------------------------------------------
@@ -130,13 +126,13 @@ static void test_iupac_encode_genome_alias()
     bool ok = true;
     for (char c : codes)
     {
-        uint8_t via_alias  = iupac::encode_genome(c);
+        uint8_t via_alias = iupac::encode_genome(c);
         uint8_t via_direct = pam::NucleotideEncoder::encode_genome(c);
         if (via_alias != via_direct)
         {
             ok = false;
-            std::cout << "    mismatch for '" << c << "': alias="
-                      << (int)via_alias << " direct=" << (int)via_direct << "\n";
+            std::cout << "    mismatch for '" << c << "': alias=" << (int)via_alias
+                      << " direct=" << (int)via_direct << "\n";
         }
     }
     record("iupac::encode_genome alias agrees with NucleotideEncoder", ok);
@@ -152,7 +148,7 @@ static void test_iupac_encode_pam_alias()
     bool ok = true;
     for (char c : codes)
     {
-        uint8_t via_alias  = iupac::encode_pam(c);
+        uint8_t via_alias = iupac::encode_pam(c);
         uint8_t via_direct = pam::NucleotideEncoder::encode_pam(c);
         if (via_alias != via_direct)
         {
@@ -173,7 +169,7 @@ static void test_iupac_complement_alias()
     bool ok = true;
     for (char c : codes)
     {
-        char via_alias  = iupac::complement(c);
+        char via_alias = iupac::complement(c);
         char via_direct = pam::NucleotideEncoder::complement(c);
         if (via_alias != via_direct)
         {
@@ -222,8 +218,8 @@ static void test_iupac_matches_ambiguity()
     uint8_t A = iupac::encode_genome('A'); // 0b0001
     uint8_t G = iupac::encode_genome('G'); // 0b0100
     uint8_t C = iupac::encode_genome('C'); // 0b0010
-    record("iupac::matches(R, A) == true",  iupac::matches(R, A));
-    record("iupac::matches(R, G) == true",  iupac::matches(R, G));
+    record("iupac::matches(R, A) == true", iupac::matches(R, A));
+    record("iupac::matches(R, G) == true", iupac::matches(R, G));
     record("iupac::matches(R, C) == false", !iupac::matches(R, C));
 }
 
@@ -251,12 +247,9 @@ static void test_iupac_matches_n_genome_matches_nothing()
 /** @brief The alias must forward to pam::reverse_complement correctly. */
 static void test_rc_alias_basic()
 {
-    record("crispritz::rc(\"ACGT\") == \"ACGT\"",
-           reverse_complement("ACGT") == "ACGT");
-    record("crispritz::rc(\"AAAA\") == \"TTTT\"",
-           reverse_complement("AAAA") == "TTTT");
-    record("crispritz::rc(\"GATTACA\") == \"TGTAATC\"",
-           reverse_complement("GATTACA") == "TGTAATC");
+    record("crispritz::rc(\"ACGT\") == \"ACGT\"", reverse_complement("ACGT") == "ACGT");
+    record("crispritz::rc(\"AAAA\") == \"TTTT\"", reverse_complement("AAAA") == "TTTT");
+    record("crispritz::rc(\"GATTACA\") == \"TGTAATC\"", reverse_complement("GATTACA") == "TGTAATC");
 }
 
 /** @brief Applying the alias twice recovers the original sequence. */
@@ -303,9 +296,9 @@ int main()
     test_rc_alias_basic();
     test_rc_alias_involution();
 
-    std::cout << "\n=== Results: " << g_passed << "/" << g_total
-              << " passed";
-    if (g_failed > 0) std::cout << " (" << g_failed << " FAILED)";
+    std::cout << "\n=== Results: " << g_passed << "/" << g_total << " passed";
+    if (g_failed > 0)
+        std::cout << " (" << g_failed << " FAILED)";
     std::cout << " ===\n";
 
     return g_failed == 0 ? 0 : 1;

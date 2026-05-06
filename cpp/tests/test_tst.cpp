@@ -15,8 +15,8 @@
  * All temporary .bin files are cleaned up at the end of each test.
  */
 
-#include "tst.hpp"
 #include "nucleotide_encoding.hpp"
+#include "tst.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -30,19 +30,18 @@
 #include <vector>
 
 namespace fs = std::filesystem;
-using crispritz::TernarySearchTree;
 using crispritz::build_tree;
+using crispritz::TernarySearchTree;
 
 // -----------------------------------------------------------------------------
 // Minimal test harness
 // -----------------------------------------------------------------------------
 
-static int g_total  = 0;
+static int g_total = 0;
 static int g_passed = 0;
 static int g_failed = 0;
 
-static void record(const std::string& name, bool ok,
-                   const std::string& detail = "")
+static void record(const std::string& name, bool ok, const std::string& detail = "")
 {
     ++g_total;
     if (ok)
@@ -54,7 +53,8 @@ static void record(const std::string& name, bool ok,
     {
         ++g_failed;
         std::cout << "  [FAIL] " << name;
-        if (!detail.empty()) std::cout << " -- " << detail;
+        if (!detail.empty())
+            std::cout << " -- " << detail;
         std::cout << "\n";
     }
 }
@@ -67,17 +67,16 @@ static void record(const std::string& name, bool ok,
  * @brief Returns a list of paths matching the pattern
  *        <pam_seq>_<chr_name>_*.bin in the current directory.
  */
-static std::vector<fs::path> find_bin_files(const std::string& pam_seq,
-                                             const std::string& chr_name)
+static std::vector<fs::path> find_bin_files(const std::string& pam_seq, const std::string& chr_name)
 {
     std::vector<fs::path> result;
     const std::string prefix = pam_seq + "_" + chr_name + "_";
     for (auto& entry : fs::directory_iterator(fs::current_path()))
     {
-        if (!entry.is_regular_file()) continue;
+        if (!entry.is_regular_file())
+            continue;
         const std::string fname = entry.path().filename().string();
-        if (fname.rfind(prefix, 0) == 0 &&
-            fname.size() > 4 &&
+        if (fname.rfind(prefix, 0) == 0 && fname.size() > 4 &&
             fname.substr(fname.size() - 4) == ".bin")
             result.push_back(entry.path());
     }
@@ -86,8 +85,7 @@ static std::vector<fs::path> find_bin_files(const std::string& pam_seq,
 }
 
 /** @brief Remove all .bin files produced by a test. */
-static void cleanup_bin_files(const std::string& pam_seq,
-                               const std::string& chr_name)
+static void cleanup_bin_files(const std::string& pam_seq, const std::string& chr_name)
 {
     for (auto& p : find_bin_files(pam_seq, chr_name))
         fs::remove(p);
@@ -105,12 +103,11 @@ static std::pair<int32_t, int32_t> read_bin_header(const fs::path& path)
         throw std::runtime_error("Cannot open: " + path.string());
 
     int32_t num_leaves = 0, guide_length = 0;
-    fin.read(reinterpret_cast<char*>(&num_leaves),  sizeof(int32_t));
+    fin.read(reinterpret_cast<char*>(&num_leaves), sizeof(int32_t));
     fin.read(reinterpret_cast<char*>(&guide_length), sizeof(int32_t));
 
     if (!fin)
-        throw std::runtime_error("File too small to contain header: " +
-                                  path.string());
+        throw std::runtime_error("File too small to contain header: " + path.string());
     return {num_leaves, guide_length};
 }
 
@@ -127,10 +124,8 @@ static std::pair<int32_t, int32_t> read_bin_header(const fs::path& path)
  * @param stride Distance between injected PAM sites (must be > pam.size()).
  * @return       Synthetic genome string.
  */
-static std::string make_genome_with_pam(int len,
-                                         const std::string& context_before,
-                                         const std::string& pam,
-                                         int stride)
+static std::string make_genome_with_pam(int len, const std::string& context_before,
+                                        const std::string& pam, int stride)
 {
     std::string genome(len, 'A');
     // Fill with repeating ACGT so no accidental PAMs appear
@@ -160,9 +155,9 @@ static std::string make_genome_with_pam(int len,
  */
 static void test_build_produces_bin_file()
 {
-    const std::string chr  = "testchr1";
-    const std::string pam  = "GG";           // only PAM portion
-    const std::string full_pam = "GG";       // pam_seq arg to build_tree
+    const std::string chr = "testchr1";
+    const std::string pam = "GG";      // only PAM portion
+    const std::string full_pam = "GG"; // pam_seq arg to build_tree
 
     // Genome: 30 A's then GG at position 20 (i.e. ACGTNGG...)
     std::string genome(50, 'A');
@@ -194,8 +189,7 @@ static void test_build_produces_bin_file()
         if (!bins.empty())
         {
             auto [nl, gl] = read_bin_header(bins[0]);
-            record("bin header: num_leaves > 0", nl > 0,
-                   "num_leaves=" + std::to_string(nl));
+            record("bin header: num_leaves > 0", nl > 0, "num_leaves=" + std::to_string(nl));
             record("bin header: guide_length == pam_length - pam_limit",
                    gl == 1, // 3 - 2 = 1
                    "guide_length=" + std::to_string(gl));
@@ -241,8 +235,7 @@ static void test_cas9_guide_length_in_header()
         if (!bins.empty())
         {
             auto [nl, gl] = read_bin_header(bins[0]);
-            record("Cas9 build: guide_length == 20", gl == 20,
-                   "stored=" + std::to_string(gl));
+            record("Cas9 build: guide_length == 20", gl == 20, "stored=" + std::to_string(gl));
             record("Cas9 build: num_leaves > 0", nl > 0);
         }
     }
@@ -268,7 +261,7 @@ static void test_pam_at_start_header()
     std::string genome(200, 'A');
     for (int pos = 0; pos + 23 < 200; pos += 50)
     {
-        genome[pos]     = 'T';
+        genome[pos] = 'T';
         genome[pos + 1] = 'T';
         genome[pos + 2] = 'T';
         // fill 20 guide bases with non-N chars
@@ -295,8 +288,7 @@ static void test_pam_at_start_header()
         if (!bins.empty())
         {
             auto [nl, gl] = read_bin_header(bins[0]);
-            record("PAM-at-start: guide_length == 20", gl == 20,
-                   "stored=" + std::to_string(gl));
+            record("PAM-at-start: guide_length == 20", gl == 20, "stored=" + std::to_string(gl));
         }
     }
     else
@@ -337,8 +329,7 @@ static void test_max_bulges_header_unaffected()
         if (!bins.empty())
         {
             auto [nl, gl] = read_bin_header(bins[0]);
-            record("max_bulges=2: guide_length still 20", gl == 20,
-                   "stored=" + std::to_string(gl));
+            record("max_bulges=2: guide_length still 20", gl == 20, "stored=" + std::to_string(gl));
         }
     }
     else
@@ -386,9 +377,8 @@ static void test_constructor_invalid_guide_length_throws()
     try
     {
         // pam_length == pam_limit -> guide_length = 0 -> invalid
-        TernarySearchTree tst("ACGTACGTACGT", "chr_invalid",
-                               "GG", /*pam_length=*/2, /*pam_limit=*/2,
-                               false, 0, 1);
+        TernarySearchTree tst("ACGTACGTACGT", "chr_invalid", "GG", /*pam_length=*/2,
+                              /*pam_limit=*/2, false, 0, 1);
     }
     catch (const std::runtime_error&)
     {
@@ -405,9 +395,8 @@ static void test_constructor_invalid_pam_limit_throws()
     bool threw = false;
     try
     {
-        TernarySearchTree tst("ACGTACGTACGT", "chr_invalid2",
-                               "", /*pam_length=*/5, /*pam_limit=*/0,
-                               false, 0, 1);
+        TernarySearchTree tst("ACGTACGTACGT", "chr_invalid2", "", /*pam_length=*/5, /*pam_limit=*/0,
+                              false, 0, 1);
     }
     catch (const std::runtime_error&)
     {
@@ -450,8 +439,7 @@ static void test_leaf_count_via_api()
     }
     catch (const std::exception& e)
     {
-        record("leaf_count test does not throw", false,
-               std::string("exception: ") + e.what());
+        record("leaf_count test does not throw", false, std::string("exception: ") + e.what());
     }
 
     cleanup_bin_files("NGG", chr);
@@ -471,15 +459,15 @@ static void test_bin_file_is_nonempty()
     {
         build_tree(genome, chr, "NGG", 23, 3, false, 0, 1);
     }
-    catch (...) {}
+    catch (...)
+    {
+    }
 
     auto bins = find_bin_files("NGG", chr);
     if (!bins.empty())
     {
         auto size = fs::file_size(bins[0]);
-        record(".bin file is non-empty",
-               size > 0,
-               "bytes=" + std::to_string(size));
+        record(".bin file is non-empty", size > 0, "bytes=" + std::to_string(size));
     }
     else
     {
@@ -502,15 +490,26 @@ static void test_two_builds_independent_files()
 
     std::string genome = make_genome_with_pam(200, "ACGTACGTACGTACGTACGT", "GG", 50);
 
-    try { build_tree(genome, chrA, "NGG", 23, 3, false, 0, 1); } catch (...) {}
-    try { build_tree(genome, chrB, "NGG", 23, 3, false, 0, 1); } catch (...) {}
+    try
+    {
+        build_tree(genome, chrA, "NGG", 23, 3, false, 0, 1);
+    }
+    catch (...)
+    {
+    }
+    try
+    {
+        build_tree(genome, chrB, "NGG", 23, 3, false, 0, 1);
+    }
+    catch (...)
+    {
+    }
 
     auto binsA = find_bin_files("NGG", chrA);
     auto binsB = find_bin_files("NGG", chrB);
 
     record("chrA and chrB produce separate .bin files",
-           !binsA.empty() && !binsB.empty() &&
-           binsA[0].filename() != binsB[0].filename());
+           !binsA.empty() && !binsB.empty() && binsA[0].filename() != binsB[0].filename());
 
     cleanup_bin_files("NGG", chrA);
     cleanup_bin_files("NGG", chrB);
@@ -548,9 +547,9 @@ int main()
     test_bin_file_is_nonempty();
     test_two_builds_independent_files();
 
-    std::cout << "\n=== Results: " << g_passed << "/" << g_total
-              << " passed";
-    if (g_failed > 0) std::cout << " (" << g_failed << " FAILED)";
+    std::cout << "\n=== Results: " << g_passed << "/" << g_total << " passed";
+    if (g_failed > 0)
+        std::cout << " (" << g_failed << " FAILED)";
     std::cout << " ===\n";
 
     return g_failed == 0 ? 0 : 1;

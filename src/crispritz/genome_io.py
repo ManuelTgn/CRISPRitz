@@ -4,7 +4,7 @@ from .crispritz_error import GenomeReaderError, GenomeWriterError
 from .exception_handlers import exception_handler
 from .enrichment.variants import IndelPair
 
-from typing import List, Optional
+from typing import List
 
 import os
 

@@ -26,20 +26,19 @@
 
 using pam::CompactGenome;
 using pam::NucleotideEncoder;
-using pam::SearchParams;
 using pam::search_pam_sites;
 using pam::search_pam_sites_fast;
+using pam::SearchParams;
 
 // -----------------------------------------------------------------------------
 // Minimal test harness (same convention as test_nucleotide_encoding.cpp)
 // -----------------------------------------------------------------------------
 
-static int g_total  = 0;
+static int g_total = 0;
 static int g_passed = 0;
 static int g_failed = 0;
 
-static void record(const std::string& name, bool ok,
-                   const std::string& detail = "")
+static void record(const std::string& name, bool ok, const std::string& detail = "")
 {
     ++g_total;
     if (ok)
@@ -51,7 +50,8 @@ static void record(const std::string& name, bool ok,
     {
         ++g_failed;
         std::cout << "  [FAIL] " << name;
-        if (!detail.empty()) std::cout << " -- " << detail;
+        if (!detail.empty())
+            std::cout << " -- " << detail;
         std::cout << "\n";
     }
 }
@@ -68,12 +68,12 @@ static std::vector<int> sorted(std::vector<int> v)
 }
 
 /** @brief True when every element of 'expected' appears in 'actual'. */
-static bool contains_all(const std::vector<int>& actual,
-                         const std::vector<int>& expected)
+static bool contains_all(const std::vector<int>& actual, const std::vector<int>& expected)
 {
     std::set<int> s(actual.begin(), actual.end());
     for (int x : expected)
-        if (s.find(x) == s.end()) return false;
+        if (s.find(x) == s.end())
+            return false;
     return true;
 }
 
@@ -86,8 +86,7 @@ static void test_compact_genome_size()
 {
     const std::string seq = "ACGTACGT";
     CompactGenome cg(seq);
-    record("CompactGenome size == seq length",
-           cg.size() == seq.size(),
+    record("CompactGenome size == seq length", cg.size() == seq.size(),
            "got " + std::to_string(cg.size()));
 }
 
@@ -100,7 +99,7 @@ static void test_compact_genome_access()
     for (size_t i = 0; i < seq.size(); ++i)
     {
         uint8_t expected = NucleotideEncoder::encode_genome(seq[i]);
-        uint8_t got      = cg[i];
+        uint8_t got = cg[i];
         if (got != expected)
         {
             ok = false;
@@ -117,8 +116,7 @@ static void test_compact_genome_data_pointer()
     const std::string seq = "ACGTACGT"; // 8 chars -> 4 bytes
     CompactGenome cg(seq);
     record("CompactGenome data() != nullptr", cg.data() != nullptr);
-    record("CompactGenome bytes() == ceil(size/2)",
-           cg.bytes() == (seq.size() + 1) / 2,
+    record("CompactGenome bytes() == ceil(size/2)", cg.bytes() == (seq.size() + 1) / 2,
            "bytes=" + std::to_string(cg.bytes()));
 }
 
@@ -158,9 +156,13 @@ static void test_pam_at_end_forward_hit()
     auto sites = search_pam_sites("NGG", genome, params);
     // At least one positive (forward) site must be found
     bool any_positive = false;
-    for (int s : sites) if (s >= 0) { any_positive = true; break; }
-    record("pam_at_end: forward hit found", any_positive,
-           "sites=" + std::to_string(sites.size()));
+    for (int s : sites)
+        if (s >= 0)
+        {
+            any_positive = true;
+            break;
+        }
+    record("pam_at_end: forward hit found", any_positive, "sites=" + std::to_string(sites.size()));
 }
 
 /**
@@ -178,9 +180,13 @@ static void test_pam_at_end_reverse_hit()
 
     auto sites = search_pam_sites("NGG", genome, params);
     bool any_negative = false;
-    for (int s : sites) if (s < 0) { any_negative = true; break; }
-    record("pam_at_end: reverse hit found", any_negative,
-           "sites=" + std::to_string(sites.size()));
+    for (int s : sites)
+        if (s < 0)
+        {
+            any_negative = true;
+            break;
+        }
+    record("pam_at_end: reverse hit found", any_negative, "sites=" + std::to_string(sites.size()));
 }
 
 /**
@@ -228,19 +234,17 @@ static void test_pam_at_start_forward_hit()
  */
 static void test_fast_vs_normal_consistency()
 {
-    const std::string genome =
-        "ACGTACGTNGGACGTACGTNGGACGTACGT"   // 30 chars, NGG at 8 and 18
-        "ACGTACGTACGTACGTACGT";             // + 20 = 50 total
+    const std::string genome = "ACGTACGTNGGACGTACGTNGGACGTACGT" // 30 chars, NGG at 8 and 18
+                               "ACGTACGTACGTACGTACGT";          // + 20 = 50 total
     SearchParams params(3, 3, /*pam_at_start=*/false, 1);
 
     auto sites_normal = search_pam_sites("NGG", genome, params);
     CompactGenome cg(genome);
-    auto sites_fast   = search_pam_sites_fast("NGG", cg, params);
+    auto sites_fast = search_pam_sites_fast("NGG", cg, params);
 
-    record("fast vs normal: same count",
-           sites_normal.size() == sites_fast.size(),
+    record("fast vs normal: same count", sites_normal.size() == sites_fast.size(),
            "normal=" + std::to_string(sites_normal.size()) +
-           " fast=" + std::to_string(sites_fast.size()));
+               " fast=" + std::to_string(sites_fast.size()));
 
     auto sn = sorted(sites_normal);
     auto sf = sorted(sites_fast);
@@ -265,10 +269,8 @@ static void test_iupac_pam_ambiguity()
 
     auto sites = search_pam_sites("NRG", genome, params);
     // We expect at least two forward hits (NAG and NGG satisfy NRG)
-    long pos_count = std::count_if(sites.begin(), sites.end(),
-                                   [](int s){ return s >= 0; });
-    record("IUPAC NRG matches NAG and NGG: >= 2 fwd hits",
-           pos_count >= 2,
+    long pos_count = std::count_if(sites.begin(), sites.end(), [](int s) { return s >= 0; });
+    record("IUPAC NRG matches NAG and NGG: >= 2 fwd hits", pos_count >= 2,
            "positive hits=" + std::to_string(pos_count));
 }
 
@@ -285,8 +287,8 @@ static void test_iupac_pam_no_match()
 
     auto sites_nyg = search_pam_sites("NYG", genome, params);
     // No forward hits expected (NGG does not match NYG)
-    long pos_count = std::count_if(sites_nyg.begin(), sites_nyg.end(),
-                                   [](int s){ return s >= 0; });
+    long pos_count =
+        std::count_if(sites_nyg.begin(), sites_nyg.end(), [](int s) { return s >= 0; });
     record("IUPAC NYG does not match NGG on fwd strand", pos_count == 0,
            "positive hits=" + std::to_string(pos_count));
 }
@@ -313,7 +315,7 @@ static void test_multithread_consistency()
     {
         if (pos + 3 <= (int)genome.size())
         {
-            genome[pos]     = 'A'; // N placeholder
+            genome[pos] = 'A'; // N placeholder
             genome[pos + 1] = 'G';
             genome[pos + 2] = 'G';
         }
@@ -326,10 +328,8 @@ static void test_multithread_consistency()
     auto s1 = sorted(search_pam_sites_fast("NGG", cg, p1));
     auto s4 = sorted(search_pam_sites_fast("NGG", cg, p4));
 
-    record("multithread: 1-thread count == 4-thread count",
-           s1.size() == s4.size(),
-           "1thr=" + std::to_string(s1.size()) +
-           " 4thr=" + std::to_string(s4.size()));
+    record("multithread: 1-thread count == 4-thread count", s1.size() == s4.size(),
+           "1thr=" + std::to_string(s1.size()) + " 4thr=" + std::to_string(s4.size()));
     record("multithread: 1-thread sites == 4-thread sites", s1 == s4);
 }
 
@@ -360,7 +360,12 @@ static void test_minimal_genome()
     record("minimal genome does not throw", !threw);
     // Any returned positive site must be >= 0
     bool valid = true;
-    for (int s : sites) if (s < 0) { valid = false; break; }
+    for (int s : sites)
+        if (s < 0)
+        {
+            valid = false;
+            break;
+        }
     record("minimal genome: no invalid (negative) forward sites", valid);
 }
 
@@ -374,8 +379,7 @@ static void test_all_n_genome()
     SearchParams params(3, 3, false, 1);
     auto sites = search_pam_sites("NGG", genome, params);
     // N (0b0000) & G (0b0100) == 0 -> no match
-    record("all-N genome: no hits", sites.empty(),
-           "sites=" + std::to_string(sites.size()));
+    record("all-N genome: no hits", sites.empty(), "sites=" + std::to_string(sites.size()));
 }
 
 /**
@@ -434,9 +438,9 @@ int main()
     test_all_n_genome();
     test_zero_threads_no_crash();
 
-    std::cout << "\n=== Results: " << g_passed << "/" << g_total
-              << " passed";
-    if (g_failed > 0) std::cout << " (" << g_failed << " FAILED)";
+    std::cout << "\n=== Results: " << g_passed << "/" << g_total << " passed";
+    if (g_failed > 0)
+        std::cout << " (" << g_failed << " FAILED)";
     std::cout << " ===\n";
 
     return g_failed == 0 ? 0 : 1;

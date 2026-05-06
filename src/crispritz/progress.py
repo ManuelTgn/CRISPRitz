@@ -1,6 +1,6 @@
 """ """
 
-from .utils import VERBOSITYLVL
+from .verbosity import VERBOSITY_LVL
 
 from typing import Iterable
 from threading import Lock
@@ -40,7 +40,7 @@ class DummyProgressBar:
 
 
 def progress_bar(iterable: Iterable, desc: str, verbosity: int) -> Iterable:
-    if verbosity in VERBOSITYLVL[1:3]:
+    if verbosity in VERBOSITY_LVL[1:3]:
         return tqdm(
             iterable,
             desc=desc,
@@ -52,7 +52,7 @@ def progress_bar(iterable: Iterable, desc: str, verbosity: int) -> Iterable:
 
 @contextmanager
 def progress_bar_parallel(total: int, desc: str, verbosity: int):
-    if verbosity in VERBOSITYLVL[1:3]:
+    if verbosity in VERBOSITY_LVL[1:3]:
         pbar = tqdm(
             total=total,
             desc=desc,

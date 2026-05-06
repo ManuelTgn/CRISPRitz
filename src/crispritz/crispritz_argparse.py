@@ -1,6 +1,7 @@
 """ """
 
-from .utils import COMMAND, VERBOSITYLVL
+from .utils import COMMAND
+from .verbosity import VERBOSITY_LVL
 from .version import __version__
 
 from argparse import (
@@ -317,6 +318,6 @@ def _validate_threads_num(threads: int, parser: CrispritzArgumentParser) -> int:
 
 
 def _validate_verbosity_value(verbosity: int, parser: CrispritzArgumentParser) -> int:
-    if verbosity not in VERBOSITYLVL:
+    if verbosity not in VERBOSITY_LVL:
         parser.error(f"Forbidden verbosity level selected ({verbosity})")
     return verbosity
