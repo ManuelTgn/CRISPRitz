@@ -1,6 +1,6 @@
-# =============================================================================
+# ==============================================================================
 # pyproject.toml 
-# =============================================================================
+# ==============================================================================
 
 [build-system]
 requires = [
@@ -8,8 +8,6 @@ requires = [
   "pybind11>=2.11",
   "setuptools>=45",
   "wheel",
-  "cmake>=3.19",
-  "ninja; platform_system!='Windows'"
 ]
 build-backend = "scikit_build_core.build"
 
@@ -53,9 +51,9 @@ Repository = "https://github.com/pinellolab/CRISPRitz"
 "Bug Tracker" = "https://github.com/pinellolab/CRISPRitz/issues"
 Changelog = "https://github.com/pinellolab/CRISPRitz/blob/main/CHANGELOG.md"
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # src/ layout: tell setuptools where to find your Python package
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 [tool.setuptools]
 package-dir = {"" = "src"}
 
@@ -66,26 +64,19 @@ where = ["src"]
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # scikit-build-core configuration
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 [tool.scikit-build]
-# Install compiled extension(s) into the crispritz package dir in the wheel:
-# final import path: `crispritz._crispritz`
 wheel.install-dir = "src/crispritz"
-
-# Put build artifacts under build/<tag> (nice for debugging)
 build-dir = "build/{wheel_tag}"
+cmake.version = ">=3.19"
+# cmake.args = ["-DBUILD_TESTING=ON"]
+build.targets = ["_ternary_search_tree"] #, "test_nucleotide_encoding", "test_pam_search"]
 
-# more logs
-# build.verbose = true
-
-[tool.scikit-build.cmake]
-version = ">=3.19"
-
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # dev tooling
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"

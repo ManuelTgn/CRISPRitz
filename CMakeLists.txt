@@ -54,45 +54,81 @@ target_link_libraries(_ternary_search_tree PRIVATE
 )
 
 # ------------------------------------------------------------------------------
+# C++ unit tests
+# ------------------------------------------------------------------------------
+include(CTest)
+if(BUILD_TESTING)
+    add_executable(test_nucleotide_encoding
+        cpp/tests/test_nucleotide_encoding.cpp
+        cpp/src/nucleotide_encoding.cpp
+    )
+    add_executable(test_pam_search
+        cpp/tests/test_pam_search.cpp
+        cpp/src/pam_search.cpp
+    )
+    
+    target_include_directories(test_nucleotide_encoding PRIVATE cpp/include)
+    target_include_directories(test_pam_search PRIVATE cpp/include)
+    
+    target_link_libraries(test_nucleotide_encoding PRIVATE OpenMP::OpenMP_CXX)
+    target_link_libraries(test_pam_search PRIVATE OpenMP::OpenMP_CXX)
+    
+    target_compile_options(test_nucleotide_encoding PRIVATE ${COMPILER_FLAGS})
+    target_compile_options(test_pam_search PRIVATE ${COMPILER_FLAGS})
+    
+    target_link_options(test_nucleotide_encoding PRIVATE ${LINK_FLAGS})
+    target_link_options(test_pam_search PRIVATE ${LINK_FLAGS})
+    
+    add_test(NAME NucleotideEncodingTest COMMAND test_nucleotide_encoding)
+    add_test(NAME PamSearchTest COMMAND test_pam_search)
+endif()
+
+# ------------------------------------------------------------------------------
 # Compiler flags
 # ------------------------------------------------------------------------------
-target_compile_options(_ternary_search_tree PRIVATE
+set(COMPILER_FLAGS
     # Common flags for all compilers
     $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:
-        -Wall
-        -Wextra
-        -Wpedantic
-        -Wno-unused-parameter   # many pybind11 shims trigger this
+        -Wall 
+        -Wextra 
+        -Wpedantic 
+        -Wno-unused-parameter       # many pybind11 shims trigger this
     >
- 
+
     # Release-only: full optimisation + auto-vectorisation hints
     $<$<AND:$<CXX_COMPILER_ID:GNU,Clang,AppleClang>,$<CONFIG:Release>>:
-        -O3
-        -march=native           # SIMD (AVX2/SSE4) where the build host supports it
-        -funroll-loops
-        -ffast-math             # safe for genomic integer-heavy code; no NaN/Inf
+        -O3 
+        -march=native               # SIMD (AVX2/SSE4) where the build host supports it
+        -funroll-loops 
+        -ffast-math                 # safe for genomic integer-heavy code; no NaN/Inf
     >
- 
+
     # Debug-only: sanitisers catch the kind of UB common in index arithmetic
     $<$<AND:$<CXX_COMPILER_ID:GNU,Clang,AppleClang>,$<CONFIG:Debug>>:
-        -O0
-        -g3
+        -O0 
+        -g3 
         -fsanitize=address,undefined
     >
- 
+
     # MSVC equivalents (Windows CI)
     $<$<CXX_COMPILER_ID:MSVC>:
-        /W4
+        /W4 
         /O2
     >
 )
- 
+
+target_compile_options(_ternary_search_tree PRIVATE ${COMPILER_FLAGS})
+
+
 # The sanitiser flags must also appear at link time
-target_link_options(_ternary_search_tree PRIVATE
+set(LINK_FLAGS
     $<$<AND:$<CXX_COMPILER_ID:GNU,Clang,AppleClang>,$<CONFIG:Debug>>:
         -fsanitize=address,undefined
     >
 )
+
+target_link_options(_ternary_search_tree PRIVATE ${LINK_FLAGS})
+
 
 # ------------------------------------------------------------------------------
 # Install
