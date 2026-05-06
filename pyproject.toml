@@ -1,5 +1,5 @@
 # ==============================================================================
-# pyproject.toml 
+# pyproject.toml
 # ==============================================================================
 
 [build-system]
@@ -45,14 +45,14 @@ docs = ["sphinx", "sphinx-rtd-theme"]
 crispritz = "crispritz.__main__:main"
 
 [project.urls]
-Homepage = "https://github.com/pinellolab/CRISPRitz"
+Homepage     = "https://github.com/pinellolab/CRISPRitz"
 Documentation = "https://github.com/pinellolab/CRISPRitz"
-Repository = "https://github.com/pinellolab/CRISPRitz"
+Repository   = "https://github.com/pinellolab/CRISPRitz"
 "Bug Tracker" = "https://github.com/pinellolab/CRISPRitz/issues"
-Changelog = "https://github.com/pinellolab/CRISPRitz/blob/main/CHANGELOG.md"
+Changelog    = "https://github.com/pinellolab/CRISPRitz/blob/main/CHANGELOG.md"
 
 # ------------------------------------------------------------------------------
-# src/ layout: tell setuptools where to find your Python package
+# src/ layout
 # ------------------------------------------------------------------------------
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -60,7 +60,6 @@ package-dir = {"" = "src"}
 [tool.setuptools.packages.find]
 where = ["src"]
 
-# Keep dependencies in requirements.txt (as you had)
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
 
@@ -68,44 +67,78 @@ dependencies = {file = ["requirements.txt"]}
 # scikit-build-core configuration
 # ------------------------------------------------------------------------------
 [tool.scikit-build]
-wheel.install-dir = "src/crispritz"
+# Place build artefacts under build/<wheel_tag> to avoid polluting the tree.
 build-dir = "build/{wheel_tag}"
-cmake.version = ">=3.19"
-# cmake.args = ["-DBUILD_TESTING=ON"]
-build.targets = ["_ternary_search_tree"] #, "test_nucleotide_encoding", "test_pam_search"]
+
+# Install the compiled extension into the Python package directory inside the wheel.
+wheel.install-dir = "src/crispritz"
+
+# Build the extension module AND all four C++ test executables in one cmake --build pass.
+# crispritz_core (the static library) is built implicitly as a dependency of all five.
+build.targets = [
+    "_ternary_search_tree",
+    "test_nucleotide_encoding",
+    "test_pam_search",
+    "test_tst_utils",
+    "test_tst",
+]
+
+[tool.scikit-build.cmake]
+version = ">=3.19"
+
+# Pass -DBUILD_TESTING=ON so the if(BUILD_TESTING) block in CMakeLists.txt is
+# activated, and run CTest immediately after the build succeeds.
+# --output-on-failure prints the full test output only when a test fails,
+# keeping normal installs quiet while making CI logs useful on regressions.
+args = [
+    "-DBUILD_TESTING=ON",
+]
+
+# ------------------------------------------------------------------------------
+# CTest integration
+# scikit-build-core >= 0.10 supports [tool.ctest] to run ctest automatically
+# after cmake --build as part of `pip install` / `python -m build`.
+# The tests run in the cmake build directory where the executables were compiled.
+# ------------------------------------------------------------------------------
+[tool.ctest]
+output-on-failure = true
+# Stop immediately on the first failing test to surface errors quickly.
+stop-on-failure   = true
+# Parallelise: run all four test executables concurrently.
+parallel          = 4
 
 # ------------------------------------------------------------------------------
 # dev tooling
 # ------------------------------------------------------------------------------
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths    = ["tests"]
 python_files = "test_*.py"
-addopts = "-v --tb=short"
+addopts      = "-v --tb=short"
 
 [tool.black]
-line-length = 88
+line-length    = 88
 target-version = ['py38']
 
 [tool.isort]
-profile = "black"
-line_length = 88
+profile          = "black"
+line_length      = 88
 known_first_party = ["crispritz"]
 
 [tool.mypy]
-python_version = "3.8"
-warn_return_any = true
+python_version      = "3.8"
+warn_return_any     = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
 
 [tool.flake8]
 max-line-length = 88
-extend-ignore = ["E203", "W503"]
-exclude = [".git", "__pycache__", "build", "dist", "*.egg-info"]
+extend-ignore   = ["E203", "W503"]
+exclude         = [".git", "__pycache__", "build", "dist", "*.egg-info"]
 
 [tool.coverage.run]
 source = ["src/crispritz"]
-omit = ["*/tests/*", "*/test_*"]
+omit   = ["*/tests/*", "*/test_*"]
 
 [tool.coverage.report]
 exclude_lines = [

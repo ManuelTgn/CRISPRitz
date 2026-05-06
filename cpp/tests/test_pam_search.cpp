@@ -142,7 +142,7 @@ static void test_compact_genome_single_base()
  *        Here we keep pam_length == pam_limit == 3 (guide_length = 0) as a
  *        minimal smoke-test focused purely on the position arithmetic.
  *
- *        Genome (20 bases): AAAAANGGAAAAAAAAAAAA
+ *        Genome (20 bases): AAAAATGGAAAAAAAAAAAA
  *                            0123456789...
  *        NGG at position 5 (0-based).  pam_length=3, pam_limit=3.
  *        Expected positive hit (guide_start): 5 + 3 - 1 - (3 - 1) = 5
@@ -150,7 +150,7 @@ static void test_compact_genome_single_base()
 static void test_pam_at_end_forward_hit()
 {
     // Genome: NGG at index 5
-    const std::string genome = "AAAAANGGAAAAAAAAAAAA"; // 20 chars
+    const std::string genome = "AAAAATGGAAAAAAAAAAAA"; // 20 chars
     SearchParams params(3, 3, /*pam_at_start=*/false, 1);
 
     auto sites = search_pam_sites("NGG", genome, params);
@@ -169,13 +169,13 @@ static void test_pam_at_end_forward_hit()
  * @brief Reverse strand: place CCN (rc of NGG) so a reverse-strand hit is
  *        detected.
  *
- *        Genome: AAAAACCNAAAAAAAAAAAA
+ *        Genome: AAAAACCGAAAAAAAAAAAA
  *        CCN at index 5.  RC of CCN is NGG, so a reverse hit is expected.
  *        Negative site indices indicate reverse-strand matches.
  */
 static void test_pam_at_end_reverse_hit()
 {
-    const std::string genome = "AAAAACCNAAAAAAAAAAAA"; // 20 chars
+    const std::string genome = "AAAAACCGAAAAAAAAAAAA"; // 20 chars
     SearchParams params(3, 3, /*pam_at_start=*/false, 1);
 
     auto sites = search_pam_sites("NGG", genome, params);
@@ -258,13 +258,13 @@ static void test_fast_vs_normal_consistency()
 /**
  * @brief PAM 'NRG' (R = A|G) must match 'NAG' and 'NGG' on the genome.
  *
- *        Genome: AAAAANAGNGGAAAAAAAAAA (21 chars)
+ *        Genome: AAAAATAGTGGAAAAAAAAAA (21 chars)
  *                           ^  ^
  *                      NAG@5   NGG@8
  */
 static void test_iupac_pam_ambiguity()
 {
-    const std::string genome = "AAAAANAGNGGAAAAAAAAAA"; // 21 chars
+    const std::string genome = "AAAAATAGTGGAAAAAAAAAA"; // 21 chars
     SearchParams params(3, 3, /*pam_at_start=*/false, 1);
 
     auto sites = search_pam_sites("NRG", genome, params);
@@ -277,12 +277,12 @@ static void test_iupac_pam_ambiguity()
 /**
  * @brief PAM 'NYG' (Y = C|T) must NOT match 'NGG' on the genome.
  *
- *        Genome: AAAAANGGAAAAAAAAAAAAA (21 chars)
+ *        Genome: AAAAAGGGAAAAAAAAAAAAA (21 chars)
  *        NYG requires the second position to be C or T; G fails that check.
  */
 static void test_iupac_pam_no_match()
 {
-    const std::string genome = "AAAAANGGAAAAAAAAAAAAA"; // 21 chars
+    const std::string genome = "AAAAAGGGAAAAAAAAAAAAA"; // 21 chars
     SearchParams params(3, 3, /*pam_at_start=*/false, 1);
 
     auto sites_nyg = search_pam_sites("NYG", genome, params);

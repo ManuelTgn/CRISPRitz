@@ -48,10 +48,10 @@ namespace crispritz
 
         // unlikely to fallback here -> no PAM occurrence found in input sequence?
         if (pam_sites.empty())
-            return // if condition hit, skip tree construction
+            return ; // if condition hit, skip tree construction
 
-                // extract sequences from genome starting at PAM occurrence positions
-                extract_sequences(pam_sites);
+        // extract sequences from genome starting at PAM occurrence positions
+        extract_sequences(pam_sites);
 
         // unlikely to fallback here -> all extracted sequences contain 'N'?
         // TODO: check if use cases triggering this behavior exist

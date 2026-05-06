@@ -139,7 +139,7 @@ static void test_iupac_encode_genome_alias()
 }
 
 /**
- * @brief iupac::encode_pam must agree with NucleotideEncoder::encode_pam
+ * @brief iupac::encode_pam must agree with NucleotideEncoder::encode_genome
  *        for ACGTN (most common PAM characters).
  */
 static void test_iupac_encode_pam_alias()
@@ -149,7 +149,7 @@ static void test_iupac_encode_pam_alias()
     for (char c : codes)
     {
         uint8_t via_alias = iupac::encode_pam(c);
-        uint8_t via_direct = pam::NucleotideEncoder::encode_pam(c);
+        uint8_t via_direct = pam::NucleotideEncoder::encode_genome(c);
         if (via_alias != via_direct)
         {
             ok = false;

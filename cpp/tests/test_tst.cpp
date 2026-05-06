@@ -172,7 +172,7 @@ static void test_build_produces_bin_file()
     bool threw = false;
     try
     {
-        build_tree(genome, chr, "GG", /*pam_length=*/3, /*pam_limit=*/2,
+        build_tree(genome, chr, pam, /*pam_length=*/3, /*pam_limit=*/2,
                    /*pam_at_start=*/false, /*max_bulges=*/0, /*threads=*/1);
     }
     catch (const std::exception& e)

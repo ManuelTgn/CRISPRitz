@@ -16,7 +16,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)  # -std=c++17, not -std=gnu++17
 # ------------------------------------------------------------------------------
 # Default build type
 # Scikit-build-core sets this from the pip/cmake CLI; default to Release so a
-# plain cmake .. & make also produces an optimised build
+# plain cmake .. & make also produces an optimised build.
 # ------------------------------------------------------------------------------
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "No build type specified - defaulting to Release")
@@ -28,107 +28,131 @@ endif()
 # ------------------------------------------------------------------------------
 find_package(pybind11 CONFIG REQUIRED)
 
-# OpenMP is required: the PAM search and TST construction are parallelised with 
-# #pragma omp and will silently fall back to single-threaded execution on 
-# MacOS/clang without it, but we want a clear error rather than a silent 
-# correctness surprise
+# OpenMP is required: the PAM search and TST construction are parallelised with
+# #pragma omp and will silently fall back to single-threaded execution on
+# macOS/clang without it, but we want a clear error rather than a silent
+# correctness surprise.
 find_package(OpenMP REQUIRED)
+
+# ------------------------------------------------------------------------------
+# Compiler / linker flag lists
+# These must be defined before any target that references them.
+# ------------------------------------------------------------------------------
+set(CRISPRITZ_COMPILE_FLAGS
+    # Warnings – applied unconditionally for GCC / Clang / AppleClang
+    $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Wno-unused-parameter   # many pybind11 shims trigger this
+    >
+
+    # Release-only: full optimisation + auto-vectorisation hints
+    $<$<AND:$<CXX_COMPILER_ID:GNU,Clang,AppleClang>,$<CONFIG:Release>>:
+        -O3
+        -march=native           # SIMD (AVX2/SSE4) where the build host supports it
+        -funroll-loops
+        -ffast-math             # safe for genomic integer-heavy code; no NaN/Inf
+    >
+
+    # Debug-only: sanitisers catch the kind of UB common in index arithmetic
+    $<$<AND:$<CXX_COMPILER_ID:GNU,Clang,AppleClang>,$<CONFIG:Debug>>:
+        -O0
+        -g3
+        -fsanitize=address,undefined
+    >
+
+    # MSVC equivalents (Windows CI)
+    $<$<CXX_COMPILER_ID:MSVC>:
+        /W4
+        /O2
+    >
+)
+
+# Sanitiser flags must also be passed at link time
+set(CRISPRITZ_LINK_FLAGS
+    $<$<AND:$<CXX_COMPILER_ID:GNU,Clang,AppleClang>,$<CONFIG:Debug>>:
+        -fsanitize=address,undefined
+    >
+)
+
+# ------------------------------------------------------------------------------
+# Shared object library for all C++ sources
+# Compiling the sources once into a static library avoids redundant compilation
+# across the extension module and every test executable.
+# ------------------------------------------------------------------------------
+add_library(crispritz_core STATIC
+    cpp/src/nucleotide_encoding.cpp
+    cpp/src/pam_search.cpp
+    cpp/src/tst.cpp
+    cpp/src/tst_utils.cpp
+)
+
+target_include_directories(crispritz_core PUBLIC cpp/include)
+target_link_libraries(crispritz_core PUBLIC OpenMP::OpenMP_CXX)
+target_compile_options(crispritz_core PRIVATE ${CRISPRITZ_COMPILE_FLAGS})
+target_link_options(crispritz_core PRIVATE ${CRISPRITZ_LINK_FLAGS})
+
+# <filesystem> requires an explicit link on GCC < 9 and some Clang versions.
+# Linking stdc++fs is harmless on compilers that bundle it into libstdc++.
+target_link_libraries(crispritz_core PUBLIC
+    $<$<AND:$<CXX_COMPILER_ID:GNU>,$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0>>:stdc++fs>
+)
 
 # ------------------------------------------------------------------------------
 # Python extension module
 # ------------------------------------------------------------------------------
 pybind11_add_module(_ternary_search_tree
     cpp/src/bindings.cpp
-    cpp/src/tst.cpp
-    cpp/src/tst_utils.cpp
-    cpp/src/pam_search.cpp
-    cpp/src/nucleotide_encoding.cpp
 )
 
-target_include_directories(_ternary_search_tree PRIVATE
-    cpp/include
-)
-
-target_link_libraries(_ternary_search_tree PRIVATE
-    OpenMP::OpenMP_CXX
-)
+target_link_libraries(_ternary_search_tree PRIVATE crispritz_core)
+target_compile_options(_ternary_search_tree PRIVATE ${CRISPRITZ_COMPILE_FLAGS})
+target_link_options(_ternary_search_tree PRIVATE ${CRISPRITZ_LINK_FLAGS})
 
 # ------------------------------------------------------------------------------
-# C++ unit tests
+# C++ unit tests (only built when CTest is enabled)
 # ------------------------------------------------------------------------------
-include(CTest)
+include(CTest)  # defines BUILD_TESTING (ON by default)
+
 if(BUILD_TESTING)
-    add_executable(test_nucleotide_encoding
+
+    # Helper macro – avoids repeating the same boilerplate for every test target.
+    # Usage: add_crispritz_test(<target> <source_file>)
+    macro(add_crispritz_test TARGET SOURCE)
+        add_executable(${TARGET} ${SOURCE})
+        target_link_libraries(${TARGET} PRIVATE crispritz_core)
+        target_compile_options(${TARGET} PRIVATE ${CRISPRITZ_COMPILE_FLAGS})
+        target_link_options(${TARGET} PRIVATE ${CRISPRITZ_LINK_FLAGS})
+        # Register with CTest; run from the build directory so relative paths work
+        add_test(
+            NAME    ${TARGET}
+            COMMAND ${TARGET}
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        )
+        # Treat a non-zero exit code as a failure (default CTest behaviour).
+        set_tests_properties(${TARGET} PROPERTIES
+            FAIL_REGULAR_EXPRESSION "\\[FAIL\\]"
+        )
+    endmacro()
+
+    add_crispritz_test(test_nucleotide_encoding
         cpp/tests/test_nucleotide_encoding.cpp
-        cpp/src/nucleotide_encoding.cpp
     )
-    add_executable(test_pam_search
+
+    add_crispritz_test(test_pam_search
         cpp/tests/test_pam_search.cpp
-        cpp/src/pam_search.cpp
     )
-    
-    target_include_directories(test_nucleotide_encoding PRIVATE cpp/include)
-    target_include_directories(test_pam_search PRIVATE cpp/include)
-    
-    target_link_libraries(test_nucleotide_encoding PRIVATE OpenMP::OpenMP_CXX)
-    target_link_libraries(test_pam_search PRIVATE OpenMP::OpenMP_CXX)
-    
-    target_compile_options(test_nucleotide_encoding PRIVATE ${COMPILER_FLAGS})
-    target_compile_options(test_pam_search PRIVATE ${COMPILER_FLAGS})
-    
-    target_link_options(test_nucleotide_encoding PRIVATE ${LINK_FLAGS})
-    target_link_options(test_pam_search PRIVATE ${LINK_FLAGS})
-    
-    add_test(NAME NucleotideEncodingTest COMMAND test_nucleotide_encoding)
-    add_test(NAME PamSearchTest COMMAND test_pam_search)
-endif()
 
-# ------------------------------------------------------------------------------
-# Compiler flags
-# ------------------------------------------------------------------------------
-set(COMPILER_FLAGS
-    # Common flags for all compilers
-    $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:
-        -Wall 
-        -Wextra 
-        -Wpedantic 
-        -Wno-unused-parameter       # many pybind11 shims trigger this
-    >
+    add_crispritz_test(test_tst_utils
+        cpp/tests/test_tst_utils.cpp
+    )
 
-    # Release-only: full optimisation + auto-vectorisation hints
-    $<$<AND:$<CXX_COMPILER_ID:GNU,Clang,AppleClang>,$<CONFIG:Release>>:
-        -O3 
-        -march=native               # SIMD (AVX2/SSE4) where the build host supports it
-        -funroll-loops 
-        -ffast-math                 # safe for genomic integer-heavy code; no NaN/Inf
-    >
+    add_crispritz_test(test_tst
+        cpp/tests/test_tst.cpp
+    )
 
-    # Debug-only: sanitisers catch the kind of UB common in index arithmetic
-    $<$<AND:$<CXX_COMPILER_ID:GNU,Clang,AppleClang>,$<CONFIG:Debug>>:
-        -O0 
-        -g3 
-        -fsanitize=address,undefined
-    >
-
-    # MSVC equivalents (Windows CI)
-    $<$<CXX_COMPILER_ID:MSVC>:
-        /W4 
-        /O2
-    >
-)
-
-target_compile_options(_ternary_search_tree PRIVATE ${COMPILER_FLAGS})
-
-
-# The sanitiser flags must also appear at link time
-set(LINK_FLAGS
-    $<$<AND:$<CXX_COMPILER_ID:GNU,Clang,AppleClang>,$<CONFIG:Debug>>:
-        -fsanitize=address,undefined
-    >
-)
-
-target_link_options(_ternary_search_tree PRIVATE ${LINK_FLAGS})
-
+endif()  # BUILD_TESTING
 
 # ------------------------------------------------------------------------------
 # Install
@@ -136,5 +160,5 @@ target_link_options(_ternary_search_tree PRIVATE ${LINK_FLAGS})
 set(PY_PACKAGE_DIR "${CMAKE_SOURCE_DIR}/src/crispritz")
 
 install(TARGETS _ternary_search_tree
-    LIBRARY DESTINATION ${PY_PACKAGE_DIR} 
+    LIBRARY DESTINATION ${PY_PACKAGE_DIR}
 )
