@@ -173,7 +173,7 @@ static void test_build_produces_bin_file()
     try
     {
         build_tree(genome, chr, pam, /*pam_length=*/3, /*pam_limit=*/2,
-                   /*pam_at_start=*/false, /*max_bulges=*/0, /*threads=*/1);
+                   /*pam_at_start=*/false, /*outdir=*/".", /*max_bulges=*/0, /*threads=*/1);
     }
     catch (const std::exception& e)
     {
@@ -220,7 +220,7 @@ static void test_cas9_guide_length_in_header()
     try
     {
         build_tree(genome, chr, "NGG", /*pam_length=*/23, /*pam_limit=*/3,
-                   /*pam_at_start=*/false, /*max_bulges=*/0, 1);
+                   /*pam_at_start=*/false, /*outdir=*/".", /*max_bulges=*/0, 1);
     }
     catch (const std::exception& e)
     {
@@ -273,7 +273,7 @@ static void test_pam_at_start_header()
     try
     {
         build_tree(genome, chr, "TTT", /*pam_length=*/23, /*pam_limit=*/3,
-                   /*pam_at_start=*/true, /*max_bulges=*/0, 1);
+                   /*pam_at_start=*/true, /*outdir=*/".", /*max_bulges=*/0, 1);
     }
     catch (const std::exception& e)
     {
@@ -314,7 +314,7 @@ static void test_max_bulges_header_unaffected()
     bool threw = false;
     try
     {
-        build_tree(genome, chr, "NGG", 23, 3, false, /*max_bulges=*/2, 1);
+        build_tree(genome, chr, "NGG", 23, 3, false, /*outdir=*/".", /*max_bulges=*/2, 1);
     }
     catch (const std::exception& e)
     {
@@ -355,7 +355,7 @@ static void test_no_pam_sites_does_not_throw()
     bool threw = false;
     try
     {
-        build_tree(genome, chr, "NGG", 23, 3, false, 0, 1);
+        build_tree(genome, chr, "NGG", 23, 3, false, ".", 0, 1);
     }
     catch (const std::exception& e)
     {
@@ -378,7 +378,7 @@ static void test_constructor_invalid_guide_length_throws()
     {
         // pam_length == pam_limit -> guide_length = 0 -> invalid
         TernarySearchTree tst("ACGTACGTACGT", "chr_invalid", "GG", /*pam_length=*/2,
-                              /*pam_limit=*/2, false, 0, 1);
+                              /*pam_limit=*/2, false, /*outdir=*/".", 0, 1);
     }
     catch (const std::runtime_error&)
     {
@@ -396,7 +396,7 @@ static void test_constructor_invalid_pam_limit_throws()
     try
     {
         TernarySearchTree tst("ACGTACGTACGT", "chr_invalid2", "", /*pam_length=*/5, /*pam_limit=*/0,
-                              false, 0, 1);
+                              false, /*outdir=*/".", 0, 1);
     }
     catch (const std::runtime_error&)
     {
@@ -430,7 +430,7 @@ static void test_leaf_count_via_api()
 
     try
     {
-        TernarySearchTree tst(genome, chr, "NGG", 23, 3, false, 0, 1);
+        TernarySearchTree tst(genome, chr, "NGG", 23, 3, false, /*outdir=*/".", 0, 1);
         tst.build();
         // leaf_count() is available before save writes files
         bool has_leaves = tst.leaf_count() > 0;
@@ -457,7 +457,7 @@ static void test_bin_file_is_nonempty()
 
     try
     {
-        build_tree(genome, chr, "NGG", 23, 3, false, 0, 1);
+        build_tree(genome, chr, "NGG", 23, 3, false, ".", 0, 1);
     }
     catch (...)
     {
@@ -492,14 +492,14 @@ static void test_two_builds_independent_files()
 
     try
     {
-        build_tree(genome, chrA, "NGG", 23, 3, false, 0, 1);
+        build_tree(genome, chrA, "NGG", 23, 3, false, ".", 0, 1);
     }
     catch (...)
     {
     }
     try
     {
-        build_tree(genome, chrB, "NGG", 23, 3, false, 0, 1);
+        build_tree(genome, chrB, "NGG", 23, 3, false, ".", 0, 1);
     }
     catch (...)
     {

@@ -22,7 +22,7 @@ PYBIND11_MODULE(_ternary_search_tree, m)
     // -------------------------------------------------------------------------
     m.def("build_tree", &crispritz::build_tree, py::arg("sequence"), py::arg("chr_name"),
           py::arg("pam_seq"), py::arg("pam_length"), py::arg("pam_limit"), py::arg("upstream"),
-          py::arg("max_bulges") = 0, py::arg("num_threads") = 1,
+          py::arg("outdir"), py::arg("max_bulges") = 0, py::arg("num_threads") = 1,
           R"doc(
 Build a Ternary Search Tree index for a single genomic sequence.
  
@@ -41,6 +41,8 @@ pam_limit : int
     Length of the PAM portion only (e.g. 3 for ``NGG``).
 upstream : bool
     True when the PAM precedes the guide (PAM-upstream, e.g. Cas12a TTTn).
+outdir: str
+    Path to the directory where the genome index will be stored.
 max_bulges : int, optional
     Maximum number of bulges; extra bases are extracted per site to support
     bulge-aware off-target search. Default 0.

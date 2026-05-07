@@ -8,6 +8,7 @@ def build_tree_cpp(
     pam_length: int,
     pam_size: int,
     upstream: bool,
+    outdir: str,
     max_bulges: int = 0,
     threads: int = 1,
 ) -> None:
@@ -15,23 +16,25 @@ def build_tree_cpp(
 
     Parameters
     ----------
-    sequence:
+    sequence: str
         Full genomic sequence (single chromosome, uppercase IUPAC).
-    contig:
+    contig: str
         Chromosome / contig identifier used in the output filename(s).
-    pam:
+    pam: str
         PAM-only string (e.g. ``"NGG"``), without guide placeholder Ns.
-    pam_length:
+    pam_length: int
         Total length of the PAM + guide pattern.
-    pam_size:
+    pam_size: int
         Length of the PAM portion only.
-    upstream:
+    upstream: bool
         True when the PAM precedes the guide (e.g. Cas12a).
-    max_bulges:
+    outdir: str
+        Path to the directory where the genome index will be stored.
+    max_bulges: int
         Maximum number of bulges allowed during index construction.
-    threads:
+    threads: int
         Number of OpenMP threads for the PAM search phase.
     """
     tst.build_tree(
-        sequence, contig, pam, pam_length, pam_size, upstream, max_bulges, threads
+        sequence, contig, pam, pam_length, pam_size, upstream, outdir, max_bulges, threads
     )

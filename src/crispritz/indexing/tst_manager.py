@@ -16,6 +16,7 @@ def build_ternary_search_tree(
     fastas: List[str],
     pam_file: str,
     bmax: int,
+    outdir: str,
     threads: int,
     verbosity: int,
     debug: bool,
@@ -35,6 +36,8 @@ def build_ternary_search_tree(
     bmax:
         Maximum number of bulges; passed to the C++ builder so it extracts
         enough extra bases per site to support bulge-aware search.
+    outdir:
+        Path to the directory where the genome index will be stored.
     threads:
         Number of OpenMP threads for the PAM search phase.
     verbosity:
@@ -47,12 +50,12 @@ def build_ternary_search_tree(
         reader = GenomeReader(fasta, debug)
         reader.read()
         # the contig name is used in the output .bin filename(s).
-        # Strip any leading 'chr' prefix to match the legacy naming used by
-        # mainParallel.cpp (the search binary expects e.g. "1" not "chr1").
+        # Add leading 'chr' prefix to improve the legacy naming used by
+        # (even though the search binary expects e.g. "1" not "chr1").
         contig = (
-            reader.header.replace("chr", "")
+            reader.header
             if reader.header.startswith("chr")
-            else reader.header
+            else f"chr{reader.header}"
         )
         print_verbosity(
             f"Building TST index for {contig} ({fasta})", verbosity, VERBOSITY_LVL[2]
@@ -65,6 +68,7 @@ def build_ternary_search_tree(
                 pam.guide_size + pam.size,
                 pam.size,
                 pam.upstream,
+                outdir,
                 bmax,
                 threads,
             )
