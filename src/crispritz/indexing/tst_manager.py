@@ -41,7 +41,7 @@ def build_ternary_search_tree(
     threads:
         Number of OpenMP threads for the PAM search phase.
     verbosity:
-        Verbosity level (see ``VERBOSITYLVL``).
+        Verbosity level (see ``VERBOSITY_LVL``).
     debug:
         When *True*, exceptions propagate with full stack traces.
     """
