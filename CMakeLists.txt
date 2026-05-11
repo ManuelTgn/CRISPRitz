@@ -84,6 +84,7 @@ set(CRISPRITZ_LINK_FLAGS
 add_library(crispritz_core STATIC
     cpp/src/nucleotide_encoding.cpp
     cpp/src/pam_search.cpp
+    cpp/src/search.cpp
     cpp/src/tst.cpp
     cpp/src/tst_utils.cpp
 )
@@ -142,6 +143,10 @@ if(BUILD_TESTING)
 
     add_crispritz_test(test_pam_search
         cpp/tests/test_pam_search.cpp
+    )
+
+    add_crispritz_test(test_search
+        cpp/tests/test_search.cpp
     )
 
     add_crispritz_test(test_tst_utils

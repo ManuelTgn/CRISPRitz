@@ -1,6 +1,6 @@
 #include "search.hpp"
 
-#include "offtarget.hpp"
+#include "nucleotide_encoding.hpp"
 #include "tst_utils.hpp"
 
 #include <algorithm>
@@ -21,52 +21,78 @@
 namespace crispritz
 {
 
-    // =========================================================================
+    // =============================================================================
     // Internal helpers
-    // =========================================================================
+    // =============================================================================
 
     namespace
     {
 
-        // ---------------------------------------------------------------------
-        // Decode a packed-nibble byte back to a printable IUPAC character.
-        // The lookup table is the same as convertBitsetToChar() in the legacy 
-        // code.
-        // ---------------------------------------------------------------------
-        static const char NUC_DECODE[16] = {
-            '-', // 0000  gap / bulge placeholder
-            'A', // 0001
-            'C', // 0010
-            '?', // 0011  M – should not appear in mismatch context
-            'G', // 0100
-            'R', // 0101
-            'S', // 0110
-            'V', // 0111
-            'T', // 1000
-            'W', // 1001
-            'Y', // 1010
-            'H', // 1011
-            'K', // 1100
-            'D', // 1101
-            'B', // 1110
-            'N', // 1111
-        };
+        // ---------------------------------------------------------------------------
+        // Nucleotide encoding / decoding
+        //
+        // The TST binary format stores two 4-bit IUPAC encodings per byte, using
+        // NucleotideEncoder::encode_genome() / encode_pam_bytes() from tst.cpp.
+        // The canonical encoding is (from nucleotide_encoding.hpp):
+        //
+        //   0b0000 = 0x0  →  'N'  (unknown / any in genome context)
+        //   0b0001 = 0x1  →  'A'
+        //   0b0010 = 0x2  →  'C'
+        //   0b0011 = 0x3  →  'M'  (A or C)
+        //   0b0100 = 0x4  →  'G'
+        //   0b0101 = 0x5  →  'R'  (A or G)
+        //   0b0110 = 0x6  →  'S'  (G or C)
+        //   0b0111 = 0x7  →  'V'  (A or C or G)
+        //   0b1000 = 0x8  →  'T'
+        //   0b1001 = 0x9  →  'W'  (A or T)
+        //   0b1010 = 0xA  →  'Y'  (C or T)
+        //   0b1011 = 0xB  →  'H'  (A or C or T)
+        //   0b1100 = 0xC  →  'K'  (G or T)
+        //   0b1101 = 0xD  →  'D'  (A or G or T)
+        //   0b1110 = 0xE  →  'B'  (C or G or T)
+        //   0b1111 = 0xF  →  'N'  (wildcard in PAM context; same bit pattern)
+        //
+        // IMPORTANT DISTINCTIONS:
+        //   - 0x0 encodes 'N' (unknown) in the GENOME encoding used throughout tst.cpp.
+        //     It does NOT encode a gap character.  Gap characters ('-') are never
+        //     stored as nibbles in the .bin format; they are introduced only during
+        //     the search traversal (guide_buf / target_buf) to mark bulge positions.
+        //   - 0xF encodes 'N' as a PAM wildcard (encode_pam) or is the SENTINEL_NIBBLE
+        //     used in node serialisation to signal a leaf pointer.
+        //
+        // We therefore delegate ALL nibble → char conversions to
+        // NucleotideEncoder::decode_genome(), which is defined in
+        // nucleotide_encoding.hpp and is the canonical inverse of encode_genome().
+        // This guarantees consistency with tst.cpp without duplicating any table.
+        // ---------------------------------------------------------------------------
+
+        /**
+         * @brief Decode a 4-bit IUPAC nibble to its printable character.
+         *
+         * Delegates directly to NucleotideEncoder::decode_genome so the mapping is
+         * identical to what tst.cpp wrote when building the index.
+         *
+         * @param nibble  4-bit value in [0, 15].
+         * @return        IUPAC character (e.g. 'A', 'G', 'N', 'R', …).
+         */
+        inline char nibble_to_char(uint8_t nibble) noexcept
+        {
+            return iupac::NucleotideEncoder::decode_genome(nibble & 0x0Fu);
+        }
 
         /** @brief True iff a & b share at least one set bit (IUPAC match). */
         inline bool nuc_match(uint8_t a, uint8_t b) noexcept
         {
-            return (a & b) != 0;
-        }
-
-        /** @brief True iff both nibbles are non-zero and share NO set bit (mismatch). */
-        inline bool nuc_mismatch(uint8_t a, uint8_t b) noexcept
-        {
-            return (a != 0) && (b != 0) && ((a & b) == 0);
+            return (a & b) != 0u;
         }
 
         // ---------------------------------------------------------------------------
         // Build a printable PAM string from a leaf's packed PAM bytes.
-        // The pam_limit first nibbles (high-nibble first within each byte) are decoded.
+        //
+        // encode_pam_bytes() in tst.cpp packs nucleotides using encode_genome()
+        // (high nibble = first nucleotide, low nibble = second nucleotide).
+        // We reverse that with high_nibble() / low_nibble() from tst_utils.hpp and
+        // decode each nibble via nibble_to_char().
         // ---------------------------------------------------------------------------
         static std::string decode_pam(const std::vector<uint8_t>& pam_enc, int pam_limit)
         {
@@ -75,7 +101,7 @@ namespace crispritz
             {
                 uint8_t nibble =
                     (i % 2 == 0) ? high_nibble(pam_enc[i / 2]) : low_nibble(pam_enc[i / 2]);
-                result[i] = NUC_DECODE[nibble & 0x0F];
+                result[i] = nibble_to_char(nibble);
             }
             return result;
         }
@@ -138,7 +164,7 @@ namespace crispritz
                                    int guide_idx, const std::string& guide_str_original,
                                    int offset_guide_len, ThreadState& ts)
         {
-            if (node_idx <= 0 || node_idx >= static_cast<int>(idx.nodes.size()))
+            if (node_idx < 0 || node_idx >= static_cast<int>(idx.nodes.size()))
                 return;
 
             const TSTIndexNode& node = idx.nodes[node_idx];
@@ -280,7 +306,7 @@ namespace crispritz
                                         const std::string& guide_str_original, int offset_guide_len,
                                         ThreadState& ts)
         {
-            if (node_idx <= 0 || node_idx >= static_cast<int>(idx.nodes.size()))
+            if (node_idx < 0 || node_idx >= static_cast<int>(idx.nodes.size()))
                 return;
 
             const TSTIndexNode& node = idx.nodes[node_idx];
@@ -397,7 +423,7 @@ namespace crispritz
                                int guide_idx, const std::string& guide_str_original,
                                int offset_guide_len, ThreadState& ts)
         {
-            if (node_idx <= 0 || node_idx >= static_cast<int>(idx.nodes.size()))
+            if (node_idx < 0 || node_idx >= static_cast<int>(idx.nodes.size()))
                 return;
 
             const TSTIndexNode& node = idx.nodes[node_idx];
@@ -433,8 +459,7 @@ namespace crispritz
             if (node.eqkid > 0)
             {
                 uint8_t g_enc = guide_enc_full[guide_pos];
-                char g_chr = static_cast<char>(
-                    NUC_DECODE[g_enc & 0x0F] == '?' ? 'N' : NUC_DECODE[g_enc & 0x0F]);
+                char g_chr = nibble_to_char(g_enc);
 
                 // Save current guide / target positions.
                 ts.guide_buf[ts.gi] = g_chr;
@@ -512,8 +537,7 @@ namespace crispritz
                     return; // guard: out-of-bounds guide_pos
 
                 uint8_t g_enc = guide_enc_full[guide_pos];
-                char g_chr = static_cast<char>(
-                    NUC_DECODE[g_enc & 0x0F] == '?' ? 'N' : NUC_DECODE[g_enc & 0x0F]);
+                char g_chr = nibble_to_char(g_enc);
 
                 ts.guide_buf[ts.gi] = g_chr;
                 ts.guide_enc[ts.gi] = g_enc;
@@ -681,9 +705,9 @@ namespace crispritz
 
     } // anonymous namespace
 
-    // -----------------------------------------------------------------------------
+    // =============================================================================
     // load_index
-    // -----------------------------------------------------------------------------
+    // =============================================================================
 
     TSTIndex load_index(const std::string& bin_path, int pam_limit, const std::string& chr_name)
     {
@@ -794,7 +818,7 @@ namespace crispritz
             // Read splitchar nibble.
             uint8_t sc_nibble = read_nibble();
             node.splitchar_enc = sc_nibble;
-            node.splitchar = NUC_DECODE[sc_nibble & 0x0F];
+            node.splitchar = nibble_to_char(sc_nibble);
 
             // lo child
             uint8_t lo_nibble = read_nibble();
@@ -915,7 +939,7 @@ namespace crispritz
                 pair_flag = 0;
             }
             node.splitchar_enc = sc;
-            node.splitchar = NUC_DECODE[sc & 0x0F];
+            node.splitchar = nibble_to_char(sc);
 
             // lo child
             uint8_t lo_nibble = next_nibble_legacy();
@@ -966,9 +990,9 @@ namespace crispritz
         return idx;
     }
 
-    // -----------------------------------------------------------------------------
+    // =============================================================================
     // search_offtargets – primary overload
-    // -----------------------------------------------------------------------------
+    // =============================================================================
 
     SearchResult search_offtargets(const std::vector<std::string>& bin_paths,
                                    const std::vector<std::string>& guides,
@@ -1145,9 +1169,9 @@ namespace crispritz
         return result;
     }
 
-    // -----------------------------------------------------------------------------
+    // =============================================================================
     // search_offtargets – scalar convenience overload
-    // -----------------------------------------------------------------------------
+    // =============================================================================
 
     SearchResult search_offtargets(const std::vector<std::string>& bin_paths,
                                    const std::vector<std::string>& guides, int max_mismatches,
