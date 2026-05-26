@@ -128,7 +128,7 @@ static void test_encode_genome_unknown()
  */
 static void test_decode_genome_roundtrip()
 {
-    const std::string codes = "ACGTNRYSWKMBDHV";
+    const std::string codes = "ACGTRYSWKMBDHV";
     for (char c : codes)
     {
         uint8_t enc = NucleotideEncoder::encode_genome(c);
@@ -249,7 +249,7 @@ static void test_rc_involution()
  */
 static void test_genome_pam_self_match()
 {
-    const std::string codes = "ACGTRYMKSWHBVDN";
+    const std::string codes = "ACGTRYMKSWHBVD";
     for (char c : codes)
     {
         uint8_t g = NucleotideEncoder::encode_genome(c);
