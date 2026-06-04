@@ -26,8 +26,6 @@ namespace pam
                 return 0b0100;
             case 'T':
                 return 0b1000;
-            case 'N':
-                return 0b0000; // Unknown
             case 'R':
                 return 0b0101; // A or G
             case 'Y':
@@ -49,7 +47,7 @@ namespace pam
             case 'V':
                 return 0b0111; // A or C or G
             default:
-                return 0b0000;
+                return 0b0000; // Unknown
             }
         }
 
@@ -66,8 +64,6 @@ namespace pam
                 return 'G';
             case 0b1000:
                 return 'T';
-            case 0b0000:
-                return 'N'; // Unknown
             case 0b0101:
                 return 'R'; // A or G
             case 0b1010:
@@ -89,7 +85,7 @@ namespace pam
             case 0b0111:
                 return 'V'; // A or C or G
             default:
-                return '0';
+                return '0'; // Unknown
             }
         }
 
@@ -128,7 +124,7 @@ namespace pam
             case 'V':
                 return 0b0111;
             default:
-                return 0b1111;
+                return 0b0000;
             }
         }
 

@@ -72,10 +72,6 @@ namespace crispritz
         std::string guide_seq;            ///< Guide subsequence (canonical order).
         std::vector<uint8_t> pam_seq_enc; ///< Bit-packed PAM bytes.
         int next = 0;                     ///< Next leaf with same guide_seq.
-
-        // Legacy fields retained for compatibility with tst_loader.hpp
-        char pam_dna[8] = {};               ///< PAM characters (char form).
-        std::bitset<4> pam_dna_bit[8] = {}; ///< PAM 4-bit encodings.
     };
 
     // =========================================================================
