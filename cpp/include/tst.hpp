@@ -92,10 +92,10 @@ namespace crispritz
      */
     struct TLeaf
     {
-        int                  guide_index;       ///< Signed genomic position.
-        std::string          guide_dna;         ///< Plain-char guide subsequence.
-        std::string          pam_dna;           ///< Packed PAM bytes (encode_pam).
-        int                  next   = 0;        ///< Next leaf with same guide_seq.
+        int guide_index = 0;
+        std::string guide_seq;            ///< Guide subsequence (canonical order).
+        std::vector<uint8_t> pam_seq_enc; ///< Bit-packed PAM bytes.
+        int next = 0;                     ///< Next leaf with same guide_seq.
     };
 
     // =========================================================================

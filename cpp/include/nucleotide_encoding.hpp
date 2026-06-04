@@ -18,22 +18,36 @@ namespace pam
         {
             switch (c)
             {
-                case 'A': return 0b0001;
-                case 'C': return 0b0010;
-                case 'G': return 0b0100;
-                case 'T': return 0b1000;
-                case 'R': return 0b0101; // A or G
-                case 'Y': return 0b1010; // C or T
-                case 'S': return 0b0110; // G or C
-                case 'W': return 0b1001; // A or T
-                case 'K': return 0b1100; // G or T
-                case 'M': return 0b0011; // A or C
-                case 'B': return 0b1110; // C or G or T
-                case 'D': return 0b1101; // A or G or T
-                case 'H': return 0b1011; // A or C or T
-                case 'V': return 0b0111; // A or C or G
-                case 'N': 
-                default:  return 0b0000; // Unknown
+            case 'A':
+                return 0b0001;
+            case 'C':
+                return 0b0010;
+            case 'G':
+                return 0b0100;
+            case 'T':
+                return 0b1000;
+            case 'R':
+                return 0b0101; // A or G
+            case 'Y':
+                return 0b1010; // C or T
+            case 'S':
+                return 0b0110; // G or C
+            case 'W':
+                return 0b1001; // A or T
+            case 'K':
+                return 0b1100; // G or T
+            case 'M':
+                return 0b0011; // A or C
+            case 'B':
+                return 0b1110; // C or G or T
+            case 'D':
+                return 0b1101; // A or G or T
+            case 'H':
+                return 0b1011; // A or C or T
+            case 'V':
+                return 0b0111; // A or C or G
+            default:
+                return 0b0000; // Unknown
             }
         }
 
@@ -71,7 +85,7 @@ namespace pam
             case 0b0111:
                 return 'V'; // A or C or G
             default:
-                return '\0';
+                return '0'; // Unknown
             }
         }
 
