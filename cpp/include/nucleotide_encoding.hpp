@@ -175,6 +175,8 @@ namespace pam
                 return 'T';
             case 'T':
                 return 'A';
+            case 'U':
+                return 'A';
             case 'C':
                 return 'G';
             case 'G':

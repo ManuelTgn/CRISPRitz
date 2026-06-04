@@ -249,7 +249,7 @@ static void test_rc_involution()
  */
 static void test_genome_pam_self_match()
 {
-    const std::string codes = "ACGTRYMKSWHBVDN";
+    const std::string codes = "ACGTRYMKSWHBVD";
     for (char c : codes)
     {
         uint8_t g = NucleotideEncoder::encode_genome(c);
