@@ -1,6 +1,6 @@
 """ """
 
-from .crispritz_error import CrispritzGuideError
+from .crispritz_errors import CrispritzGuideError
 from .dna_alphabet import DNA
 from .exception_handlers import exception_handler
 from .pam import PAM

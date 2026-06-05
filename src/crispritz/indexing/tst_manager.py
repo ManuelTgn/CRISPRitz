@@ -1,6 +1,6 @@
 """ """
 
-from ..crispritz_error import CrispritzTstError
+from ..crispritz_errors import CrispritzTstError
 from ..exception_handlers import exception_handler
 from ..crispritz_cpp import build_tree_cpp
 from ..verbosity import VERBOSITY_LVL, print_verbosity

@@ -1,6 +1,6 @@
 """ """
 
-from .crispritz_error import CrispritzPamError
+from .crispritz_errors import CrispritzPamError
 from .exception_handlers import exception_handler
 
 from typing import Tuple

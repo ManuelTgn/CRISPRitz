@@ -1,6 +1,6 @@
 """ """
 
-from ..crispritz_error import CrispritzTstError, CrispritzSearchError
+from ..crispritz_errors import CrispritzTstError, CrispritzSearchError
 from ..exception_handlers import exception_handler
 from ..guide import GuideList
 from ..pam import PAM

@@ -1,6 +1,6 @@
 """ """
 
-from ..crispritz_error import CrispritzError
+from ..crispritz_errors import CrispritzError
 
 class CrispritzEnrichmentError(CrispritzError):
     def __init__(self, value: str):
