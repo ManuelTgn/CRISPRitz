@@ -79,7 +79,6 @@ build.targets = [
     "_ternary_search_tree",
     "test_nucleotide_encoding",
     "test_pam_search",
-    "test_search",
     "test_tst_utils",
     "test_tst",
 ]

@@ -1,11 +1,9 @@
 #ifndef TST_UTILS_HPP
 #define TST_UTILS_HPP
 
-#include "nucleotide_encoding.hpp"
+#include "nucleotide_encoding.hpp" // NucleotideEncoder, pam::reverse_complement
 
 #include <cstdint>
-#include <filesystem>
-#include <ostream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -13,131 +11,106 @@
 namespace crispritz
 {
 
-    namespace iupac 
+    /**
+     * @brief 4-bit IUPAC nucleotide encoding used throughout TST construction.
+     *
+     * Bit layout (LSB first): bit0=A, bit1=C, bit2=G, bit3=T.
+     * Ambiguous codes set the union of their constituent bases.
+     * The sentinel value 0x00 represents a gap character '-' (used in bulge
+     * alignment). The value 0x0F represents 'N' (any base) in PAM contexts and
+     * also the '_' end-of-sequence marker in the serialized binary format.
+     *
+     * These values must stay stable: the binary .bin format written by saveTST
+     * and read by searchOnTST encodes two nucleotides per byte using these exact
+     * 4-bit patterns.
+     */
+    namespace iupac
     {
-        uint8_t encode_genome(char c) {
-            return pam::NucleotideEncoder::encode_genome(c);
+        // aliases into the canonical implementation so tst.cpp call sites
+        // do not need to change namespace, and there is exactly one encoding table
+        using pam::NucleotideEncoder;
+
+        constexpr uint8_t encode_genome(char c) noexcept
+        {
+            return NucleotideEncoder::encode_genome(c);
         }
 
-        char decode_genome(uint8_t bit) {
-            return pam::NucleotideEncoder::decode_genome(bit);
+        constexpr uint8_t encode_pam(char c) noexcept
+        {
+            return NucleotideEncoder::encode_genome(c);
         }
 
-        char complement(char c) {
-            return pam::NucleotideEncoder::complement(c);
+        constexpr char complement(char c) noexcept
+        {
+            return NucleotideEncoder::complement(c);
         }
 
-        std::string reverse_complement(std::string_view seq) {
-            return pam::reverse_complement(seq);
+        constexpr bool matches(uint8_t a, uint8_t b) noexcept
+        {
+            return (a & b) != 0;
         }
+    } // namespace iupac
+
+    // alias the already-implemented reverse_complement from the pam namespace
+    using pam::reverse_complement;
+
+    // ---------------------------------------------------------------------------
+    // Bit-packing helpers (two IUPAC nibbles per byte)
+    //
+    // The binary .bin format stores two 4-bit IUPAC encoded nucleotides per byte:
+    //   high nibble (bits 7-4) = first nucleotide
+    //   low  nibble (bits 3-0) = second nucleotide
+    //
+    // The value 0b1111 in the high nibble is the special end-of-sequence sentinel
+    // '_' used during TST serialization (writePair equivalent).
+    //
+    // These helpers centralize the packing/unpacking so that both the TST writer
+    // (tst.cpp) and any future reader share identical logic.
+    // ---------------------------------------------------------------------------
+
+    /**
+     * @brief Pack two 4-bit IUPAC encodings into one byte.
+     *
+     * @param high  Encoding for the high nibble (first nucleotide).
+     * @param low   Encoding for the low nibble  (second nucleotide).
+     * @return      Packed byte: (high << 4) | low.
+     */
+    constexpr uint8_t pack_nibbles(uint8_t high, uint8_t low) noexcept
+    {
+        return static_cast<uint8_t>((high << 4) | (low & 0b1111));
+    }
+
+    /**
+     * @brief Extract the high nibble (first nucleotide) from a packed byte.
+     * @param byte  Packed byte produced by pack_nibbles.
+     * @return      4-bit IUPAC encoding of the first nucleotide.
+     */
+    constexpr uint8_t high_nibble(uint8_t byte) noexcept
+    {
+        return static_cast<uint8_t>((byte >> 4) & 0b1111);
+    }
+
+    /**
+     * @brief Extract the low nibble (second nucleotide) from a packed byte.
+     * @param byte  Packed byte produced by pack_nibbles.
+     * @return      4-bit IUPAC encoding of the second nucleotide.
+     */
+    constexpr uint8_t low_nibble(uint8_t byte) noexcept
+    {
+        return static_cast<uint8_t>(byte & 0b1111);
     }
 
     /**
      * @brief Sentinel high-nibble value used to signal end-of-node in the binary
      *        format (equivalent to the legacy '_' character in writePair).
      */
-    constexpr uint8_t SENTINEL_HIGH_NIBBLE = 0xF0;
-
-    /**
-     * @brief Sentinel low-nibble value used to signal end-of-node in the binary
-     *        format (equivalent to the legacy '_' character in writePair).
-     */
-    constexpr uint8_t SENTINEL_LOW_NIBBLE = 0x0F;
+    constexpr uint8_t SENTINEL_NIBBLE = 0b1111;
 
     /**
      * @brief Sentinel byte written when a TST node has no child in that slot.
      *        Equivalent to the legacy '0' character written by serialize().
      */
-    constexpr uint8_t NULL_CHILD_NIBBLE = 0x0;
-    
-    class Serializer
-    {
-      public:
-        // Encoding tables as constexpr for compile-time optimization
-        static constexpr uint8_t serialize_left_nuc(char c)
-        {
-            switch (c)
-            {
-                case 'A': return 0x10;
-                case 'C': return 0x20;
-                case 'G': return 0x40;
-                case 'T': return 0x80;
-                case '_': return SENTINEL_HIGH_NIBBLE;
-                case 'R': return 0x50;
-                case 'Y': return 0xA0;
-                case 'S': return 0x60;
-                case 'W': return 0x90;
-                case 'K': return 0xC0;
-                case 'M': return 0x30;
-                case 'B': return 0xE0;
-                case 'D': return 0xD0;
-                case 'H': return 0xB0;
-                case 'V': return 0x70;
-                case '0': return NULL_CHILD_NIBBLE;
-                default:  return NULL_CHILD_NIBBLE;
-            }
-        }
-
-        static constexpr uint8_t serialize_right_nuc(char c)
-        {
-            switch (c)
-            {
-                case 'A': return 0x1; 
-                case 'C': return 0x2;
-                case 'G': return 0x4;
-                case 'T': return 0x8;
-                case '_': return SENTINEL_LOW_NIBBLE;
-                case 'R': return 0x05;
-                case 'Y': return 0x0A;
-                case 'S': return 0x06;
-                case 'W': return 0x09;
-                case 'K': return 0x0C;
-                case 'M': return 0x03;
-                case 'B': return 0x0E;
-                case 'D': return 0x0D;
-                case 'H': return 0x0B;
-                case 'V': return 0x07;
-                case '0': return NULL_CHILD_NIBBLE;
-                default:  return NULL_CHILD_NIBBLE;
-            }
-        }
-
-        static constexpr uint8_t serialize_pam(char c)
-        {
-            switch (c)
-            {
-                case 'A': return 0x1; 
-                case 'C': return 0x2;
-                case 'G': return 0x4;
-                case 'T': return 0x8;
-                case 'R': return 0x05;
-                case 'Y': return 0x0A;
-                case 'S': return 0x06;
-                case 'W': return 0x09;
-                case 'K': return 0x0C;
-                case 'M': return 0x03;
-                case 'B': return 0x0E;
-                case 'D': return 0x0D;
-                case 'H': return 0x0B;
-                case 'V': return 0x07;
-                default:  return NULL_CHILD_NIBBLE;
-            }
-        }
-    };
-
-    inline bool is_valid_genomic_window(std::string window) noexcept {
-        for (char c : window) {
-            // skip window containing 'N' or null elements
-            if (c == 'N' || c == '\0' || c == '-')
-                return false;
-        }
-        return true;
-    }
-
-    std::filesystem::path format_partition_filename(std::string outdir, std::string pam_seq, std::string chr_name, int part) {
-        return std::filesystem::path(outdir) / (pam_seq + "_" + chr_name + "_" + std::to_string(part) + ".bin");
-    }
-    
+    constexpr uint8_t NULL_CHILD_NIBBLE = 0b0000;
 
 } // namespace crispritz
 

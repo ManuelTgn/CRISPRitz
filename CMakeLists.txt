@@ -144,9 +144,13 @@ if(BUILD_TESTING)
         cpp/tests/test_pam_search.cpp
     )
 
-    # add_crispritz_test(test_tst_utils
-    #     cpp/tests/test_tst_utils.cpp
-    # )
+    add_crispritz_test(test_tst_utils
+        cpp/tests/test_tst_utils.cpp
+    )
+
+    add_crispritz_test(test_tst
+        cpp/tests/test_tst.cpp
+    )
 
 endif()  # BUILD_TESTING
 
