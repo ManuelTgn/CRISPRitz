@@ -15,24 +15,25 @@ Usage:
 Run 'crispritz -h/--help' to display the complete help
 """
 
-from .crispritz_argparse import (
-    CrispritzArgumentParser,
+from argparse import _SubParsersAction
+from time import time
+
+import os
+import sys
+
+
+from .crispritz_argparse import CrispritzArgumentParser
+from .crispritz_inputargs import (
     CrispritzEnrichmentInputArgs,
     CrispritzIndexingInputArgs,
     CrispritzSearchInputArgs,
 )
-from .exception_handlers import sigint_handler
 from .enrichment import add_variants_cli
+from .exception_handlers import sigint_handler
 from .indexing import index_genome_cli
 from .search import search_offtargets_cli
 from .utils import TOOLNAME, SUBCOMMANDS
 from .version import __version__
-
-from argparse import _SubParsersAction
-from time import time
-
-import sys
-import os
 
 
 def _create_parser_crispritz() -> CrispritzArgumentParser:
