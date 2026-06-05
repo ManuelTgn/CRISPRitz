@@ -83,3 +83,17 @@ def reverse_complement(sequence: str) -> str:
     return "".join(RC[nt] for nt in sequence[::-1])
 
 
+def dna2rna(sequence: str) -> str:
+    """Convert a DNA sequence to its RNA equivalent.
+
+    Replaces all occurrences of 'T' with 'U' and 't' with 'u' in the input sequence.
+
+    Args:
+        sequence (str): The DNA sequence to convert.
+
+    Returns:
+        str: The RNA sequence.
+    """
+    return sequence.replace("T", "U").replace("t", "u")
+
+
