@@ -82,6 +82,7 @@ build.targets = [
     "test_tst_utils",
     "test_tst",
     "test_offtarget", 
+    "test_search_configuration",
 ]
 
 [tool.scikit-build.cmake]
@@ -105,8 +106,8 @@ args = [
 output-on-failure = true
 # Stop immediately on the first failing test to surface errors quickly.
 stop-on-failure   = true
-# Parallelise: run all five test executables concurrently.
-parallel          = 5
+# Parallelise: run all six test executables concurrently.
+parallel          = 6
 
 # ------------------------------------------------------------------------------
 # dev tooling
