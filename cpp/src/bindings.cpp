@@ -8,22 +8,22 @@
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(_ternary_search_tree, m)
-{
-    m.doc() = "CRISPRitz C++ API bindings (pybind11)";
+PYBIND11_MODULE(_ternary_search_tree, m) {
+  m.doc() = "CRISPRitz C++ API bindings (pybind11)";
 
-    // Map C++ runtime errors to Python RuntimeError so callers get a
-    // descriptive exception instead of a hard crash.
-    py::register_exception<std::runtime_error>(m, "TSTBuildError");
-    py::register_exception<std::invalid_argument>(m, "TSTSearchError");
+  // Map C++ runtime errors to Python RuntimeError so callers get a
+  // descriptive exception instead of a hard crash.
+  py::register_exception<std::runtime_error>(m, "TSTBuildError");
+  py::register_exception<std::invalid_argument>(m, "TSTSearchError");
 
-    // =========================================================================
-    // TST index construction
-    // =========================================================================
-    m.def("build_tree", &crispritz::build_tree, py::arg("sequence"), py::arg("chr_name"),
-          py::arg("pam_seq"), py::arg("pam_length"), py::arg("pam_limit"), py::arg("upstream"),
-          py::arg("outdir"), py::arg("max_bulges") = 0, py::arg("num_threads") = 1,
-          R"doc(
+  // =========================================================================
+  // TST index construction
+  // =========================================================================
+  m.def("build_tree", &crispritz::build_tree, py::arg("sequence"),
+        py::arg("chr_name"), py::arg("pam_seq"), py::arg("pam_length"),
+        py::arg("pam_limit"), py::arg("upstream"), py::arg("outdir"),
+        py::arg("max_bulges") = 0, py::arg("num_threads") = 1,
+        R"doc(
 Build a Ternary Search Tree index for a single genomic sequence.
 
 Parameters
@@ -54,5 +54,4 @@ Raises
 TSTBuildError
     If no valid PAM sites are found or an output file cannot be written.
 )doc");
-
 }
