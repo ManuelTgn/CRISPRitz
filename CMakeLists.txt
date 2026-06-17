@@ -86,6 +86,7 @@ add_library(crispritz_core STATIC
     cpp/src/offtarget.cpp
     cpp/src/output_writer.cpp
     cpp/src/pam_search.cpp
+    cpp/src/profile_data.cpp
     cpp/src/search_configuration.cpp
     cpp/src/tst.cpp
     cpp/src/tst_search.cpp
@@ -154,6 +155,10 @@ if(BUILD_TESTING)
 
     add_crispritz_test(test_pam_search
         cpp/tests/test_pam_search.cpp
+    )
+
+    add_crispritz_test(test_profile_data
+        cpp/tests/test_profile_data.cpp
     )
 
     add_crispritz_test(test_search_configuration

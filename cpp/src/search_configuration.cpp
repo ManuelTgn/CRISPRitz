@@ -16,9 +16,7 @@ std::string_view to_string(OutputFormat fmt) noexcept {
   case OutputFormat::Targets:
     return "targets";
   }
-  // Unreachable for a valid enum value; keeps the compiler from warning
-  // about a missing return on some toolchains.
-  return "tsv";
+  return "tsv"; // unreachable for valid enum values
 }
 
 OutputFormat output_format_from_string(std::string_view name) {
@@ -32,15 +30,45 @@ OutputFormat output_format_from_string(std::string_view name) {
 }
 
 // =========================================================================
+// OutputMode free functions
+// =========================================================================
+
+std::string_view to_string(OutputMode mode) noexcept {
+  switch (mode) {
+  case OutputMode::TargetsOnly:
+    return "targets";
+  case OutputMode::ProfileOnly:
+    return "profile";
+  case OutputMode::Both:
+    return "both";
+  }
+  return "both"; // unreachable for valid enum values
+}
+
+OutputMode output_mode_from_string(std::string_view name) {
+  if (name == "targets")
+    return OutputMode::TargetsOnly;
+  if (name == "profile")
+    return OutputMode::ProfileOnly;
+  if (name == "both")
+    return OutputMode::Both;
+  throw std::invalid_argument(
+      "output_mode_from_string: expected \"targets\", \"profile\", or "
+      "\"both\", got \"" +
+      std::string(name) + '"');
+}
+
+// =========================================================================
 // SearchConfiguration
 // =========================================================================
 
 SearchConfiguration::SearchConfiguration(int max_mismatches, int max_bulges_dna,
                                          int max_bulges_rna, int threads,
-                                         OutputFormat output_format)
+                                         OutputFormat output_format,
+                                         OutputMode output_mode)
     : max_mismatches_(max_mismatches), max_bulges_dna_(max_bulges_dna),
       max_bulges_rna_(max_bulges_rna), threads_(threads),
-      output_format_(output_format) {
+      output_format_(output_format), output_mode_(output_mode) {
   // Only standalone-checkable invariants are validated here. The
   // edit-budget-vs-guide-length relationship is deferred to the index
   // loader, where guide_length becomes known (see header documentation).
