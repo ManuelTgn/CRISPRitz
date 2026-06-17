@@ -370,7 +370,14 @@ LoadedTST load_partition(const std::string &partition_path) {
 // =========================================================================
 
 TSTSearcher::TSTSearcher(SearchConfiguration config)
-    : config_(std::move(config)) {}
+    : config_(std::move(config)) {
+      // Note: config_.threads() is intentionally NOT consulted here. The
+      // searcher is single-threaded by design; thread count belongs to the
+      // Python orchestration layer, which sizes its ThreadPoolExecutor and
+      // dispatches one search_partition() call per .bin file. The searcher
+      // only reads the edit-budget fields (mismatches / bulges). See the
+      // serial-loop rationale in search_all().
+    }
 
 namespace {
 /**
@@ -597,6 +604,22 @@ TSTSearcher::search_all(const LoadedTST &tst,
   SearchResult result;
   result.source_path = tst.source_path();
   result.hits_by_guide.reserve(guides.size());
+
+  // The loop over guides is DELIBERATELY serial. Do not parallelise it
+  // (e.g. with "#pragma omp parallel for").
+  //
+  // The parallelism axis in this architecture is the *partition*, not the
+  // guide: the Python orchestration layer drives a memory-aware
+  // ThreadPoolExecutor that calls search_partition() once per .bin file,
+  // and the pybind11 binding releases the GIL so those calls run as true
+  // parallel C++. Real workloads have very few guides (1-20) but many
+  // partitions, so partition-level parallelism saturates the cores while
+  // guide-level parallelism would not.
+  //
+  // Adding OpenMP here would nest guide-parallelism inside the Python
+  // thread pool and oversubscribe the CPU (threads x guides), degrading
+  // performance. Keeping this serial is the correct design, not an
+  // oversight.
 
   for (const std::string &g : guides)
     result.hits_by_guide.push_back(search(tst, g));

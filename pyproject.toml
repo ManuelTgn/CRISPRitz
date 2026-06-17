@@ -82,6 +82,7 @@ build.targets = [
     "test_tst_utils",
     "test_tst",
     "test_offtarget", 
+    "test_output_writer",
     "test_search_configuration",
     "test_tst_search",
 ]

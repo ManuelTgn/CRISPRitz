@@ -13,7 +13,6 @@ def search_offtargets_tst(indexes: List[str], pam_file: str, guides_file: str, m
     guides = GuideList(guides_file, pam, debug)  # initialize guides
 
     # NOTE: each guide must be given as both fwd and reverse strand!!!
-    # NOTE: attach null symbol at first 
 
 
 
