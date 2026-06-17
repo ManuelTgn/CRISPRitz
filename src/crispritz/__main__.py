@@ -27,6 +27,7 @@ from .crispritz_inputargs import (
     CrispritzEnrichmentInputArgs,
     CrispritzIndexingInputArgs,
     CrispritzSearchInputArgs,
+    OUTPUT_MODES,
 )
 from .enrichment import add_variants_cli
 from .exception_handlers import sigint_handler
@@ -82,7 +83,7 @@ def _create_enrichment_parser(subparser: _SubParsersAction) -> _SubParsersAction
     parser_enrichment = subparser.add_parser(
         SUBCOMMANDS[0],
         usage="CRISPRitz add-variants {version}\n\nUsage:\n"
-        "\tcrisprhawk add-variants --vcf <vcf> --genome <fasta>\n\n",
+        "\tcrispritz add-variants --vcf <vcf> --genome <fasta>\n\n",
         description="Genome enrichment pipeline: parses input VCF files to "
         "integrate sequence variants (SNPs and indels) into the reference FASTA "
         "files",
@@ -183,7 +184,7 @@ def _create_indexing_parser(subparser: _SubParsersAction) -> _SubParsersAction:
     parser_indexing = subparser.add_parser(
         SUBCOMMANDS[1],
         usage="CRISPRitz index-genome {version}\n\nUsage:\n"
-        "\tcrisprhawk index-genome --genome <genome-dir> --genome-name "
+        "\tcrispritz index-genome --genome <genome-dir> --genome-name "
         "<genome-name> --pam <pam-file>\n\n",
         description="Create a genome TST index for fast (optionally bulge-aware) "
         "off-target candidate searches.",
@@ -282,22 +283,39 @@ def _create_indexing_parser(subparser: _SubParsersAction) -> _SubParsersAction:
 
 
 def _create_search_parser(subparser: _SubParsersAction) -> _SubParsersAction:
+    """Create and configure the argument parser for the search subcommand.
+
+    Defines required and optional arguments for the off-target search pipeline:
+    the pre-computed TST genome index, the PAM model, the guide RNAs, the edit
+    budget (mismatches plus optional DNA/RNA bulges), and the output controls
+    (which files to produce and in what serialization format).
+
+    Args:
+        subparser (_SubParsersAction): The subparsers collection to which the
+            search parser will be added.
+
+    Returns:
+        _SubParsersAction: The configured search subparser.
+    """
     parser_search = subparser.add_parser(
         SUBCOMMANDS[2],
         usage="CRISPRitz search {version}\n\nUsage:\n"
-        "\tcrisprhawk search --index-genome <index-genome-dir> --pam <pam-file> "
-        "--guides <guides-file> --mm <mismatches>\n\n",
-        description="Search for potential CRISPR off-target sites for each input "
-        "guide RNA using a pre-computed genome index based on a Ternary Search "
-        "Tree (TST).",
-        help="Identify potential off-target sites using a specified edit "
-        "distance, defined as the sum of mismatches (mandatory) and optional "
-        "DNA/RNA bulges. The search is performed on a pre-computed genome index "
-        "(TST: Ternary Search Tree) to ensure fast and scalable queries. "
-        "The algorithm traverses the indexed genome to extract all candidate "
-        "off-targets that satisfy the user-defined thresholds. Results are "
-        "reported in tab-separated format and can be further scored and/or "
-        "annotated in downstream analyses.",
+        "\tcrispritz search --index-genome <index-genome-dir> --pam <pam-file> "
+        "--guides <guides-file> --mm <mismatches> [--bdna <n>] [--brna <n>] "
+        "[--output-mode <targets|profile|both>] "
+        "[--output-format <tsv|targets>] [--outdir <dir>] [--threads <n>]\n\n",
+        description="Search for candidate CRISPR off-target sites for each input "
+        "guide RNA against a pre-computed genome index based on a Ternary Search "
+        "Tree (TST). The index already encodes the PAM and guide geometry fixed "
+        "during the 'index-genome' step; this command supplies only the search "
+        "tolerances and the desired output.",
+        help="Identify candidate off-target sites within a user-defined edit "
+        "distance, given as the number of mismatches (required) plus optional "
+        "DNA and RNA bulges. The search traverses a pre-computed TST genome "
+        "index, enumerating every site whose alignment to a guide stays within "
+        "the edit budget. Results are reported as a tab-separated targets table "
+        "and/or per-guide mismatch profiles, ready for downstream scoring and "
+        "annotation.",
         add_help=False,
     )
     general_group = parser_search.add_argument_group("General options")
@@ -311,20 +329,21 @@ def _create_search_parser(subparser: _SubParsersAction) -> _SubParsersAction:
         metavar="INDEX-GENOME",
         dest="genome_index",
         required=True,
-        help="Path to the genome index directory generated during the "
-        "'genome-index' step. This directory contains the pre-computed "
-        "TST structures used for off-target search",
+        help="path to the genome index directory produced by the 'index-genome' "
+        "command. It must contain the pre-computed TST partitions (*.bin) used "
+        "for the off-target search",
     )
     required_group.add_argument(
         "--pam",
         type=str,
         metavar="PAM-FILE",
-        dest="pamfile",
+        dest="pam_file",  # fixed: was "pamfile"; CrispritzSearchInputArgs reads pam_file
         required=True,
         help="path to a text file specifying the PAM model. The file must "
-        "contain: (1) the full pattern including a number of 'N' characters "
-        "equal to the guide length, and (2) a space-separated integer "
-        "indicating the PAM length. Example format: NNNNNNNNNNNNNNNNNNNNGG 3",
+        "contain: (1) the full pattern, with a run of 'N' characters equal to "
+        "the guide length, and (2) a space-separated integer giving the PAM "
+        "length. Must match the PAM used to build the index. "
+        "Example: NNNNNNNNNNNNNNNNNNNNGG 3",
     )
     required_group.add_argument(
         "--guides",
@@ -332,10 +351,9 @@ def _create_search_parser(subparser: _SubParsersAction) -> _SubParsersAction:
         metavar="GUIDES-FILE",
         dest="guides_file",
         required=True,
-        help="Path to a text file containing one or more guide RNA sequences "
-        "(one per line). Each guide must match the expected format implied "
-        "by the PAM model (i.e., compatible guide length and PAM structure). "
-        "Example format: CTAACAGTTGCTTTTATCACNNN",
+        help="path to a text file with one guide RNA per line. Each guide must "
+        "match the length and PAM structure implied by the index. "
+        "Example: CTAACAGTTGCTTTTATCACNNN",
     )
     required_group.add_argument(
         "--mm",
@@ -343,8 +361,8 @@ def _create_search_parser(subparser: _SubParsersAction) -> _SubParsersAction:
         metavar="MISMATCHES",
         dest="mm",
         required=True,
-        help="Maximum number of mismatches allowed between the guide RNA and "
-        "candidate off-target sequences",
+        help="maximum number of mismatches (substitutions) allowed between a "
+        "guide RNA and a candidate off-target site",
     )
     optional_group = parser_search.add_argument_group("Optional arguments")
     optional_group.add_argument(
@@ -354,8 +372,9 @@ def _create_search_parser(subparser: _SubParsersAction) -> _SubParsersAction:
         dest="bdna",
         required=False,
         default=0,
-        help="Maximum number of DNA bulges allowed during alignment between "
-        "the guide RNA and off-target sequences (default: 0)",
+        help="maximum number of DNA bulges allowed in the guide/off-target "
+        "alignment. Cannot exceed the bulge budget the index was built with "
+        "(default: 0)",
     )
     optional_group.add_argument(
         "--brna",
@@ -364,8 +383,22 @@ def _create_search_parser(subparser: _SubParsersAction) -> _SubParsersAction:
         dest="brna",
         required=False,
         default=0,
-        help="Maximum number of RNA bulges allowed during alignment between "
-        "the guide RNA and off-target sequences (default: 0)",
+        help="maximum number of RNA bulges allowed in the guide/off-target "
+        "alignment. Cannot exceed the bulge budget the index was built with "
+        "(default: 0)",
+    )
+    optional_group.add_argument(
+        "--output-mode",
+        type=str,
+        metavar="MODE",
+        dest="output_mode",
+        choices=OUTPUT_MODES,
+        required=False,
+        default=OUTPUT_MODES[0],  # "both"
+        help="which result files to produce: 'targets' writes only the "
+        "off-target sites table; 'profile' writes only the per-guide mismatch "
+        "profile summaries; 'both' writes targets and profiles "
+        "(choices: targets, profile, both; default: both)",
     )
     optional_group.add_argument(
         "--outdir",
@@ -374,9 +407,8 @@ def _create_search_parser(subparser: _SubParsersAction) -> _SubParsersAction:
         dest="outdir",
         required=False,
         default=os.getcwd(),
-        help="directory where output files will be written. If not specified, a "
-        "folder named '<GENOME-NAME>_<PAM>_<BMAX>' will be created in the "
-        "current working directory.",
+        help="directory where output files will be written. If not specified, "
+        "results are written to the current working directory",
     )
     optional_group.add_argument(
         "--threads",
@@ -385,7 +417,7 @@ def _create_search_parser(subparser: _SubParsersAction) -> _SubParsersAction:
         dest="threads",
         required=False,
         default=1,
-        help="number of threads. Use 0 for using all available cores (default: 1)",
+        help="number of threads. Use 0 for all available cores (default: 1)",
     )
     optional_group.add_argument(
         "--verbosity",
@@ -393,9 +425,9 @@ def _create_search_parser(subparser: _SubParsersAction) -> _SubParsersAction:
         metavar="VERBOSITY",
         dest="verbosity",
         required=False,
-        default=1,  # minimal output
-        help="verbosity level of output messages: 0 = Silent, 1 = Normal, 2 = "
-        "Verbose, 3 = Debug (default: 1)",
+        default=1,
+        help="verbosity level of output messages: 0 = Silent, 1 = Normal, "
+        "2 = Verbose, 3 = Debug (default: 1)",
     )
     optional_group.add_argument(
         "--debug",
@@ -404,7 +436,6 @@ def _create_search_parser(subparser: _SubParsersAction) -> _SubParsersAction:
         help="enter debug mode and trace the full error stack",
     )
     return parser_search
-
 
 def _parse_input_args():
     parser = _create_parser_crispritz()  # parse input argument using custom parser

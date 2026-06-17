@@ -1,4 +1,4 @@
-from ..crispritz_argparse import CrispritzIndexingInputArgs
+from ..crispritz_inputargs import CrispritzIndexingInputArgs
 from .tst_manager import build_ternary_search_tree
 
 

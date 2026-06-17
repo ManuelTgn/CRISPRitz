@@ -1,4 +1,4 @@
-from ..crispritz_argparse import CrispritzEnrichmentInputArgs
+from ..crispritz_inputargs import CrispritzEnrichmentInputArgs
 from .enricher import enrich_genome
 
 from typing import List

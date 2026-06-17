@@ -1,4 +1,4 @@
-from ..crispritz_argparse import CrispritzSearchInputArgs
+from ..crispritz_inputargs import CrispritzSearchInputArgs
 from .tst_explorer import search_offtargets_tst
 
 def search_offtargets_cli(args: CrispritzSearchInputArgs) -> None:

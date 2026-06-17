@@ -11,6 +11,14 @@ import os
 from .crispritz_argparse import CrispritzArgumentParser
 from .verbosity import VERBOSITY_LVL
 
+
+# Canonical CLI choices — kept in sync with the C++ SearchConfiguration enums
+# (OutputMode / OutputFormat). These strings are passed verbatim to the
+# pybind11 layer, which feeds them to output_mode_from_string() /
+# output_format_from_string(); they must match those expected tokens exactly.
+OUTPUT_MODES = ("both", "targets", "profile")
+
+
 class CrispritzInputArgs:
     def __init__(self, args: Namespace, parser: CrispritzArgumentParser) -> None:
         self._args = args
@@ -232,6 +240,10 @@ class CrispritzSearchInputArgs(CrispritzInputArgs):
     @property
     def brna(self) -> int:
         return self._args.brna
+    
+    @property
+    def output_mode(self) -> str:
+        return self._args.output_mode
 
 
 def _check_folder(dirname: str, parser: CrispritzArgumentParser, msg: str) -> None:
