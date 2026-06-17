@@ -216,6 +216,157 @@ namespace crispritz
             return formatter_->name();
         }
 
+        // ---- streaming / threshold-flush API -------------------------------
+
+        /**
+         * @brief Default number of buffered records before an automatic flush.
+         *
+         * Bounds peak memory during genome-wide searches: instead of holding an
+         * entire partition's hits (potentially millions) in memory before
+         * writing, a streaming Session accumulates at most this many records and
+         * flushes them to the output stream when the buffer fills. This mirrors
+         * the legacy "write after N targets" behaviour.
+         *
+         * @note Set this to the exact legacy batch size for byte-for-byte
+         *       behavioural parity. The value chosen here bounds the buffer to a
+         *       few hundred MB of OffTarget objects.
+         */
+        static constexpr std::size_t DEFAULT_FLUSH_THRESHOLD = 1'000'000;
+
+        /**
+         * @brief A streaming write session that flushes records in capped batches.
+         *
+         * Created via OutputWriter::open_session() / open_session_to_file(). The
+         * session writes the header once on construction, buffers records via
+         * add()/add_all(), and flushes automatically whenever the buffer reaches
+         * the configured threshold. Any remaining buffered records are flushed
+         * by close() or by the destructor (RAII), so no records are lost even on
+         * early scope exit.
+         *
+         * The session holds at most @c threshold records in memory at once,
+         * independent of how many records are ultimately written — this is what
+         * makes genome-wide output memory-safe.
+         *
+         * A Session is move-only (it owns a buffer and references a stream); it
+         * must not outlive the stream it writes to.
+         */
+        class Session
+        {
+          public:
+            /**
+             * @brief Begin a streaming session on @p os.
+             * @param formatter  Formatter to use (borrowed; must outlive Session).
+             * @param os          Destination stream (borrowed; must outlive Session).
+             * @param threshold   Records buffered before an auto-flush (> 0).
+             * @param write_header Emit the header immediately (default true).
+             * @throws std::runtime_error  if the stream is not writable.
+             * @throws std::invalid_argument if threshold == 0.
+             */
+            Session(const OffTargetFormatter& formatter,
+                    std::ostream&             os,
+                    std::size_t               threshold,
+                    bool                      write_header = true);
+
+            /**
+             * @brief Optional owning variant: the session owns the file stream.
+             *
+             * Used by open_session_to_file() so the file is closed (after a final
+             * flush) when the session is destroyed.
+             */
+            Session(const OffTargetFormatter&      formatter,
+                    std::unique_ptr<std::ostream>  owned_os,
+                    std::size_t                    threshold,
+                    bool                           write_header = true);
+
+            ~Session();
+
+            Session(Session&&) noexcept            = default;
+            Session& operator=(Session&&) noexcept = default;
+            Session(const Session&)                = delete;
+            Session& operator=(const Session&)     = delete;
+
+            /**
+             * @brief Buffer one record, auto-flushing if the threshold is hit.
+             * @param ot  Record to add.
+             * @throws std::runtime_error if an auto-flush write fails.
+             */
+            void add(const OffTarget& ot);
+
+            /**
+             * @brief Buffer many records (each may trigger an auto-flush).
+             * @param records  Records to add, in order.
+             */
+            void add_all(const std::vector<OffTarget>& records);
+
+            /**
+             * @brief Flush all currently buffered records to the stream now.
+             * @return Number of records flushed by this call.
+             * @throws std::runtime_error if the stream enters a fail state.
+             */
+            std::size_t flush();
+
+            /**
+             * @brief Flush remaining records and mark the session complete.
+             *
+             * Idempotent. Called automatically by the destructor; call it
+             * explicitly when you want write errors to surface as exceptions
+             * (a destructor must not throw, so errors during destruction are
+             * suppressed).
+             *
+             * @return Total records written over the session's lifetime.
+             * @throws std::runtime_error if the final flush fails.
+             */
+            std::size_t close();
+
+            /** @return Total records written so far (flushed). */
+            [[nodiscard]] std::size_t total_written() const noexcept { return written_; }
+
+            /** @return Records currently buffered, not yet flushed. */
+            [[nodiscard]] std::size_t buffered() const noexcept { return buffer_.size(); }
+
+          private:
+            const OffTargetFormatter&     formatter_;
+            std::unique_ptr<std::ostream> owned_os_;   // non-null iff session owns the stream
+            std::ostream&                 os_;
+            std::size_t                   threshold_;
+            std::vector<OffTarget>        buffer_;
+            std::size_t                   written_ = 0;
+            bool                          closed_  = false;
+        };
+
+        /**
+         * @brief Open a streaming session that writes to @p os.
+         *
+         * The caller owns @p os and must keep it alive for the session's
+         * lifetime. Use this for stdout or an already-open stream.
+         *
+         * @param os         Destination stream.
+         * @param threshold  Records buffered before an auto-flush
+         *                   (default: DEFAULT_FLUSH_THRESHOLD).
+         * @param write_header Emit the header immediately (default true).
+         * @return A Session bound to @p os.
+         */
+        [[nodiscard]] Session open_session(
+            std::ostream& os,
+            std::size_t   threshold    = DEFAULT_FLUSH_THRESHOLD,
+            bool          write_header = true) const;
+
+        /**
+         * @brief Open a streaming session that writes to a new file at @p path.
+         *
+         * The session owns the file stream and closes it (after a final flush)
+         * when destroyed. The directory must already exist.
+         *
+         * @param path       Destination file path (truncated).
+         * @param threshold  Records buffered before an auto-flush
+         *                   (default: DEFAULT_FLUSH_THRESHOLD).
+         * @return A Session that owns the file stream.
+         * @throws std::runtime_error if the file cannot be opened.
+         */
+        [[nodiscard]] Session open_session_to_file(
+            const std::string& path,
+            std::size_t        threshold = DEFAULT_FLUSH_THRESHOLD) const;
+
       private:
         std::unique_ptr<OffTargetFormatter> formatter_;
     };

@@ -200,4 +200,131 @@ namespace crispritz
         return write(result, out, /*write_header=*/true);
     }
 
+    // =========================================================================
+    // OutputWriter::Session — streaming, threshold-flushed writing
+    // =========================================================================
+
+    OutputWriter::Session::Session(const OffTargetFormatter& formatter,
+                                   std::ostream&             os,
+                                   std::size_t               threshold,
+                                   bool                      write_header)
+        : formatter_(formatter)
+        , owned_os_(nullptr)
+        , os_(os)
+        , threshold_(threshold)
+    {
+        if (threshold_ == 0)
+            throw std::invalid_argument("OutputWriter::Session: threshold must be > 0");
+        if (!os_.good())
+            throw std::runtime_error("OutputWriter::Session: output stream is not writable");
+
+        buffer_.reserve(threshold_);
+
+        if (write_header)
+        {
+            os_ << formatter_.header() << '\n';
+            check_stream(os_, "header");
+        }
+    }
+
+    OutputWriter::Session::Session(const OffTargetFormatter&     formatter,
+                                   std::unique_ptr<std::ostream> owned_os,
+                                   std::size_t                   threshold,
+                                   bool                          write_header)
+        : formatter_(formatter)
+        , owned_os_(std::move(owned_os))
+        , os_(*owned_os_)
+        , threshold_(threshold)
+    {
+        if (threshold_ == 0)
+            throw std::invalid_argument("OutputWriter::Session: threshold must be > 0");
+        if (!os_.good())
+            throw std::runtime_error("OutputWriter::Session: output stream is not writable");
+
+        buffer_.reserve(threshold_);
+
+        if (write_header)
+        {
+            os_ << formatter_.header() << '\n';
+            check_stream(os_, "header");
+        }
+    }
+
+    OutputWriter::Session::~Session()
+    {
+        // RAII safety net: flush whatever remains. A destructor must not throw,
+        // so write errors here are suppressed. Call close() explicitly to have
+        // such errors surface as exceptions.
+        if (!closed_)
+        {
+            try
+            {
+                flush();
+            }
+            catch (...)
+            {
+                // swallow — cannot propagate from a destructor
+            }
+        }
+    }
+
+    void OutputWriter::Session::add(const OffTarget& ot)
+    {
+        buffer_.push_back(ot);
+        if (buffer_.size() >= threshold_)
+            flush();
+    }
+
+    void OutputWriter::Session::add_all(const std::vector<OffTarget>& records)
+    {
+        for (const OffTarget& ot : records)
+            add(ot);
+    }
+
+    std::size_t OutputWriter::Session::flush()
+    {
+        if (buffer_.empty())
+            return 0;
+
+        for (const OffTarget& ot : buffer_)
+        {
+            os_ << formatter_.format_row(ot) << '\n';
+            check_stream(os_, "row");
+        }
+        os_.flush();
+        check_stream(os_, "flush");
+
+        const std::size_t n = buffer_.size();
+        written_ += n;
+        buffer_.clear();
+        return n;
+    }
+
+    std::size_t OutputWriter::Session::close()
+    {
+        if (!closed_)
+        {
+            flush();
+            closed_ = true;
+        }
+        return written_;
+    }
+
+    OutputWriter::Session OutputWriter::open_session(std::ostream& os,
+                                                     std::size_t   threshold,
+                                                     bool          write_header) const
+    {
+        return Session(*formatter_, os, threshold, write_header);
+    }
+
+    OutputWriter::Session OutputWriter::open_session_to_file(const std::string& path,
+                                                            std::size_t threshold) const
+    {
+        auto out = std::make_unique<std::ofstream>(path, std::ios::out | std::ios::trunc);
+        if (!out->is_open())
+            throw std::runtime_error("OutputWriter: cannot open output file: " + path);
+
+        return Session(*formatter_, std::move(out), threshold, /*write_header=*/true);
+    }
+
 } // namespace crispritz

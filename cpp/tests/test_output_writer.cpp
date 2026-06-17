@@ -355,6 +355,170 @@ static void test_stream_file_consistency()
 }
 
 // =============================================================================
+// Streaming Session — threshold flush
+// =============================================================================
+
+static void test_session_basic_stream()
+{
+    OutputWriter w{OutputFormat::Tsv};
+    std::ostringstream os;
+    {
+        auto sess = w.open_session(os, /*threshold=*/1000);
+        sess.add(hit("chr1", 100, Strand::Forward));
+        sess.add(hit("chr1", 200, Strand::Reverse));
+        // not yet flushed (below threshold), but close()/dtor will flush
+        std::size_t n = sess.close();
+        record("session: close() reports 2 written", n == 2u);
+    }
+    auto ls = lines(os.str());
+    record("session: 3 lines (header + 2)", ls.size() == 3u,
+           "lines=" + std::to_string(ls.size()));
+}
+
+static void test_session_auto_flush_at_threshold()
+{
+    OutputWriter w{OutputFormat::Tsv};
+    std::ostringstream os;
+    auto sess = w.open_session(os, /*threshold=*/3);
+
+    sess.add(hit("chr1", 1, Strand::Forward));
+    sess.add(hit("chr1", 2, Strand::Forward));
+    record("session: below threshold, 0 flushed", sess.total_written() == 0u);
+    record("session: 2 buffered", sess.buffered() == 2u);
+
+    sess.add(hit("chr1", 3, Strand::Forward)); // hits threshold → auto-flush
+    record("session: at threshold, 3 flushed", sess.total_written() == 3u);
+    record("session: buffer cleared after flush", sess.buffered() == 0u);
+
+    sess.add(hit("chr1", 4, Strand::Forward));
+    record("session: 1 buffered after next add", sess.buffered() == 1u);
+    sess.close();
+    record("session: 4 total after close", sess.total_written() == 4u);
+}
+
+static void test_session_memory_is_bounded()
+{
+    // The key property: with threshold N, the buffer never exceeds N regardless
+    // of how many records are written.
+    OutputWriter w{OutputFormat::Tsv};
+    std::ostringstream os;
+    auto sess = w.open_session(os, /*threshold=*/10);
+
+    std::size_t max_buffered = 0;
+    for (int i = 1; i <= 95; ++i)
+    {
+        sess.add(hit("chr1", i, Strand::Forward));
+        if (sess.buffered() > max_buffered)
+            max_buffered = sess.buffered();
+    }
+    record("session: buffer never exceeds threshold", max_buffered <= 10u,
+           "max_buffered=" + std::to_string(max_buffered));
+    sess.close();
+    record("session: all 95 records written", sess.total_written() == 95u);
+
+    auto ls = lines(os.str());
+    record("session: 96 lines (header + 95)", ls.size() == 96u,
+           "lines=" + std::to_string(ls.size()));
+}
+
+static void test_session_add_all()
+{
+    OutputWriter w{OutputFormat::Tsv};
+    std::ostringstream os;
+    auto sess = w.open_session(os, /*threshold=*/2);
+    std::vector<OffTarget> recs = {
+        hit("chr1", 1, Strand::Forward),
+        hit("chr1", 2, Strand::Forward),
+        hit("chr1", 3, Strand::Forward),
+        hit("chr1", 4, Strand::Forward),
+        hit("chr1", 5, Strand::Forward),
+    };
+    sess.add_all(recs);
+    sess.close();
+    record("session add_all: 5 written", sess.total_written() == 5u);
+    record("session add_all: header + 5 lines", lines(os.str()).size() == 6u);
+}
+
+static void test_session_dtor_flushes()
+{
+    OutputWriter w{OutputFormat::Tsv};
+    std::ostringstream os;
+    {
+        auto sess = w.open_session(os, /*threshold=*/1000);
+        sess.add(hit("chr9", 42, Strand::Reverse));
+        // no explicit close — destructor must flush the single buffered record
+    }
+    auto ls = lines(os.str());
+    record("session dtor: flushes buffered record (header + 1)",
+           ls.size() == 2u, "lines=" + std::to_string(ls.size()));
+}
+
+static void test_session_threshold_zero_rejected()
+{
+    OutputWriter w{OutputFormat::Tsv};
+    std::ostringstream os;
+    bool threw = false;
+    try { auto sess = w.open_session(os, /*threshold=*/0); (void)sess; }
+    catch (const std::invalid_argument&) { threw = true; }
+    record("session: threshold 0 throws invalid_argument", threw);
+}
+
+static void test_session_to_file_threshold()
+{
+    OutputWriter w{OutputFormat::Targets};
+    const std::string path = "/tmp/crispritz_ow_session.targets";
+    {
+        auto sess = w.open_session_to_file(path, /*threshold=*/4);
+        for (int i = 1; i <= 10; ++i)
+            sess.add(hit("chr1", i, Strand::Forward));
+        std::size_t n = sess.close();
+        record("session file: 10 written", n == 10u);
+    } // file closed here via owned stream
+
+    std::ifstream in(path);
+    record("session file: exists", in.is_open());
+    std::string content((std::istreambuf_iterator<char>(in)),
+                        std::istreambuf_iterator<char>());
+    in.close();
+    record("session file: header + 10 lines", lines(content).size() == 11u,
+           "lines=" + std::to_string(lines(content).size()));
+    std::remove(path.c_str());
+}
+
+static void test_session_to_file_bad_path()
+{
+    OutputWriter w{OutputFormat::Tsv};
+    bool threw = false;
+    try { auto sess = w.open_session_to_file("/nonexistent_dir_xyz/s.tsv"); (void)sess; }
+    catch (const std::runtime_error&) { threw = true; }
+    record("session file: bad path throws runtime_error", threw);
+}
+
+static void test_session_equivalent_to_batch_write()
+{
+    // Streaming output must be byte-identical to the one-shot write() for the
+    // same records and format — chunking is an implementation detail.
+    std::vector<OffTarget> recs;
+    for (int i = 1; i <= 50; ++i)
+        recs.push_back(hit("chr2", i, (i % 2) ? Strand::Forward : Strand::Reverse, i % 3));
+
+    OutputWriter w{OutputFormat::Tsv};
+
+    std::ostringstream batch_os;
+    w.write(recs, batch_os);
+
+    std::ostringstream stream_os;
+    {
+        auto sess = w.open_session(stream_os, /*threshold=*/7);
+        sess.add_all(recs);
+        sess.close();
+    }
+
+    record("streaming output == batch output (byte-identical)",
+           batch_os.str() == stream_os.str());
+}
+
+// =============================================================================
 // main
 // =============================================================================
 
@@ -390,6 +554,17 @@ int main()
     test_malformed_path_throws();
     test_malformed_path_searchresult_throws();
     test_stream_file_consistency();
+
+    std::cout << "\n-- streaming Session (threshold flush) --\n";
+    test_session_basic_stream();
+    test_session_auto_flush_at_threshold();
+    test_session_memory_is_bounded();
+    test_session_add_all();
+    test_session_dtor_flushes();
+    test_session_threshold_zero_rejected();
+    test_session_to_file_threshold();
+    test_session_to_file_bad_path();
+    test_session_equivalent_to_batch_write();
 
     std::cout << "\n=== Results: " << g_passed << '/' << g_total << " passed";
     if (g_failed > 0) std::cout << " (" << g_failed << " FAILED)";
